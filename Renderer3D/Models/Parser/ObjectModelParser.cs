@@ -6,6 +6,9 @@ using System.Numerics;
 
 namespace Renderer3D.Models.Parser
 {
+    /// <summary>
+    /// Parser for .obj files
+    /// </summary>
     public static class ObjectModelParser
     {
         private static Vector4 ParseVertex(string[] values)
@@ -61,7 +64,7 @@ namespace Renderer3D.Models.Parser
                 throw new InvalidOperationException("Supplied line values are invalid");
             }
 
-            List<PolygonVertice> polygonVertices = new List<PolygonVertice>();
+            List<PolygonVertex> polygonVertices = new List<PolygonVertex>();
 
             for (int i = 1; i < values.Length; i++)
             {
@@ -78,9 +81,9 @@ namespace Renderer3D.Models.Parser
                     textureIndex = string.IsNullOrEmpty(polygonValues[1]) ? -1 : int.Parse(polygonValues[1]) - 1;
                 }
 
-                polygonVertices.Add(new PolygonVertice
+                polygonVertices.Add(new PolygonVertex
                 {
-                    VerticeIndex = verticeIndex,
+                    VertexIndex = verticeIndex,
                     TextureIndex = textureIndex,
                     NormalVectorIndex = normalVectorIndex
                 });
@@ -92,6 +95,11 @@ namespace Renderer3D.Models.Parser
             };
         }
 
+        /// <summary>
+        /// Parse any .obj model file
+        /// </summary>
+        /// <param name="objPath">File path to .obj file</param>
+        /// <returns>Parsed model object</returns>
         public static ObjectModel Parse(string objPath)
         {
             using StreamReader file = new StreamReader(objPath);

@@ -4,12 +4,30 @@ using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Renderer
 {
+    /// <summary>
+    /// Renders complex models into bitmap source
+    /// </summary>
     public class Renderer
     {
+        /// <summary>
+        /// Format of pixels for rendered bitmap
+        /// </summary>
         public PixelFormat PixelFormat { get; set; }
+        /// <summary>
+        /// Width of the bitmap
+        /// </summary>
         public int Width { get; set; }
+        /// <summary>
+        /// Height of the bitmap
+        /// </summary>
         public int Height { get; set; }
+        /// <summary>
+        /// Width of the row of pixels of the bitmap
+        /// </summary>
         public int Stride => (Width * PixelFormat.BitsPerPixel + 7) / 8;
+        /// <summary>
+        /// Parsed model to render on bitmap
+        /// </summary>
         public ObjectModel ObjectModel { get; set; }
 
         public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model)
@@ -17,6 +35,10 @@ namespace Renderer3D.Models.Renderer
             (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
         }
 
+        /// <summary>
+        /// Renders the loaded model into bitmap
+        /// </summary>
+        /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
             //Init bitmap
