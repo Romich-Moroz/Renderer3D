@@ -5,6 +5,9 @@ using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.WritableBitmap
 {
+    /// <summary>
+    /// Drawing extensions for writable bitmap
+    /// </summary>
     public static class WritableBitmapExtensions
     {
         public static void DrawLine(this WriteableBitmap bitmap, Point x1, Point x2, Color color)

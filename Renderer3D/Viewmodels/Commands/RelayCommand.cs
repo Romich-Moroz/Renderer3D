@@ -3,6 +3,10 @@ using System.Windows.Input;
 
 namespace Render3D.Viewmodels.Commands
 {
+    /// <summary>
+    /// General purpose command
+    /// </summary>
+    /// <typeparam name="T">Type of the parameter for command</typeparam>
     internal class RelayCommand<T> : ICommand
     {
 
