@@ -1,67 +1,47 @@
-﻿using System;
+﻿using Render3D.Viewmodels.Commands;
+using Renderer3D.Models.Parser;
+using Renderer3D.Models.Renderer;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows;
-using Render3D.Viewmodels.Commands;
-using System.Threading;
+using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Viewmodels
 {
     public class RendererViewmodel : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged = (sender,e) => { };
-
-        public PixelFormat PixelFormat { get; private set; }
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public int Stride => (Width * PixelFormat.BitsPerPixel + 7) / 8;
+        public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
         public BitmapSource Frame { get; private set; }
-      
         public ICommand MouseMoveCommand { get; }
 
-        private WriteableBitmap _bitmap;
+        private Renderer Renderer { get; }
 
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
         {
-            //Init properties
-            PixelFormat = pixelFormat;
-            Width = (int)window.Width;
-            Height = (int)window.Height;
+            //Init renderer (for test purposes change your model name here)
+            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
+            Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
 
             //Window resize handler
             window.SizeChanged += (sender, e) =>
             {
-                Width = (int)e.NewSize.Width;
-                Height = (int)e.NewSize.Height;
+                Renderer.Width = (int)e.NewSize.Width;
+                Renderer.Height = (int)e.NewSize.Height;
             };
 
             //Mouse drag handler
             MouseMoveCommand = new RelayCommand<MouseEventArgs>((args) =>
             {
-                Task.Factory.StartNew(Render, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             }, (args) => args.LeftButton == MouseButtonState.Pressed);
 
             //Initial render
-            Render();
+            Frame = Renderer.Render();
         }
 
-        private void Render()
-        {
-            //Init bitmap
-            _bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride));
-            
-            //Draw logic here...
-            //Use _bitmap.ExtensionMethod to draw
 
-
-
-
-            //Update UI
-            _bitmap.Freeze();
-            Frame = _bitmap;
-        }
     }
 }
