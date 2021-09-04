@@ -1,7 +1,4 @@
 ﻿using Renderer3D.Models.Parser;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -13,9 +10,12 @@ namespace Renderer3D.Models.Renderer
         public int Width { get; set; }
         public int Height { get; set; }
         public int Stride => (Width * PixelFormat.BitsPerPixel + 7) / 8;
-        public ObjectModel ObjectModel { get; set;}
+        public ObjectModel ObjectModel { get; set; }
 
-        public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model) => (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
+        public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model)
+        {
+            (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
+        }
 
         public BitmapSource Render()
         {

@@ -1,5 +1,4 @@
 ﻿using Renderer3D.Models.Data;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace Renderer3D.Models.Parser
@@ -11,7 +10,9 @@ namespace Renderer3D.Models.Parser
         public Vector3[] NormalVectors { get; }
         public Polygon[] Polygons { get; }
 
-        public ObjectModel(Vector4[] vertexes, Vector3[] vertexTextures, Vector3[] normalVectors, Polygon[] polygons) =>
+        public ObjectModel(Vector4[] vertexes, Vector3[] vertexTextures, Vector3[] normalVectors, Polygon[] polygons)
+        {
             (Vertexes, VertexTextures, NormalVectors, Polygons) = (vertexes, vertexTextures, normalVectors, polygons);
+        }
     }
 }

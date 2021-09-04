@@ -14,9 +14,9 @@ namespace Render3D.Viewmodels.Commands
 
         private readonly Action<T> _executeAction;
 
-        private readonly Func<T,bool> _canExecuteAction;
+        private readonly Func<T, bool> _canExecuteAction;
 
-        public RelayCommand(Action<T> executeAction, Func<T,bool> canExecuteAction)
+        public RelayCommand(Action<T> executeAction, Func<T, bool> canExecuteAction)
         {
             _executeAction = executeAction ?? throw new ArgumentNullException(nameof(executeAction));
             _canExecuteAction = canExecuteAction;

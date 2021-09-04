@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using System.Text;
 
 namespace Renderer3D.Models.Parser
 {
@@ -12,7 +11,9 @@ namespace Renderer3D.Models.Parser
         private static Vector4 ParseVertex(string[] values)
         {
             if (values[0] != "v" || values.Length < 4)
+            {
                 throw new InvalidOperationException("Supplied line values are invalid");
+            }
 
             return new Vector4
             {
@@ -26,12 +27,14 @@ namespace Renderer3D.Models.Parser
         private static Vector3 ParseVertexTexture(string[] values)
         {
             if (values[0] != "vt" || values.Length < 2)
+            {
                 throw new InvalidOperationException("Supplied line values are invalid");
+            }
 
             return new Vector3
             {
                 X = float.Parse(values[1]),
-                Y = values.Length >=3 ? float.Parse(values[2]) : 0,
+                Y = values.Length >= 3 ? float.Parse(values[2]) : 0,
                 Z = values.Length == 4 ? float.Parse(values[3]) : 0
             };
         }
@@ -39,7 +42,9 @@ namespace Renderer3D.Models.Parser
         private static Vector3 ParseNormalVector(string[] values)
         {
             if (values[0] != "vn" || values.Length < 4)
+            {
                 throw new InvalidOperationException("Supplied line values are invalid");
+            }
 
             return new Vector3
             {
@@ -52,20 +57,22 @@ namespace Renderer3D.Models.Parser
         private static Polygon ParsePolygon(string[] values, int vertexCount)
         {
             if (values[0] != "f" || values.Length < 4)
+            {
                 throw new InvalidOperationException("Supplied line values are invalid");
+            }
 
-            var polygonVertices = new List<PolygonVertice>();
+            List<PolygonVertice> polygonVertices = new List<PolygonVertice>();
 
             for (int i = 1; i < values.Length; i++)
             {
                 string[] polygonValues = values[i].Split('/');
 
-                var verticeIndex = int.Parse(polygonValues[0]);
+                int verticeIndex = int.Parse(polygonValues[0]);
                 verticeIndex = verticeIndex > 0 ? verticeIndex - 1 : vertexCount + verticeIndex;
 
-                var normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) : -1;
+                int normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) : -1;
 
-                var textureIndex = -1;
+                int textureIndex = -1;
                 if (polygonValues.Length >= 2)
                 {
                     textureIndex = string.IsNullOrEmpty(polygonValues[1]) ? -1 : int.Parse(polygonValues[1]) - 1;
@@ -74,7 +81,7 @@ namespace Renderer3D.Models.Parser
                 polygonVertices.Add(new PolygonVertice
                 {
                     VerticeIndex = verticeIndex,
-                    TextureIndex =  textureIndex,
+                    TextureIndex = textureIndex,
                     NormalVectorIndex = normalVectorIndex
                 });
             }
@@ -87,14 +94,14 @@ namespace Renderer3D.Models.Parser
 
         public static ObjectModel Parse(string objPath)
         {
-            using var file = new StreamReader(objPath);
+            using StreamReader file = new StreamReader(objPath);
             string line;
             int lineCounter = 0;
 
-            var vertexes = new List<Vector4>();
-            var vertexTextures = new List<Vector3>();
-            var normalVectors = new List<Vector3>();
-            var polygons = new List<Polygon>();
+            List<Vector4> vertexes = new List<Vector4>();
+            List<Vector3> vertexTextures = new List<Vector3>();
+            List<Vector3> normalVectors = new List<Vector3>();
+            List<Polygon> polygons = new List<Polygon>();
 
             while ((line = file.ReadLine()) != null)
             {
@@ -103,9 +110,11 @@ namespace Renderer3D.Models.Parser
 
                 //Comment or empty
                 if (line.Length == 0 || line[0] == '#')
+                {
                     continue;
+                }
 
-                string[] stringValues = line.Split(' ',StringSplitOptions.RemoveEmptyEntries);
+                string[] stringValues = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 switch (stringValues[0])
                 {
                     case "v":
