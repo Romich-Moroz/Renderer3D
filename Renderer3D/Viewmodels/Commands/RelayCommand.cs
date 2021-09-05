@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace Render3D.Viewmodels.Commands
+namespace Renderer3D.Viewmodels.Commands
 {
     /// <summary>
     /// General purpose command

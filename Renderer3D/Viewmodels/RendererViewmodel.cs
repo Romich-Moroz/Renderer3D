@@ -1,4 +1,4 @@
-﻿using Render3D.Viewmodels.Commands;
+﻿using Renderer3D.Viewmodels.Commands;
 using Renderer3D.Models.Parser;
 using Renderer3D.Models.Renderer;
 using System.ComponentModel;
@@ -29,7 +29,8 @@ namespace Renderer3D.Viewmodels
             window.SizeChanged += (sender, e) =>
             {
                 Renderer.Width = (int)e.NewSize.Width;
-                Renderer.Height = (int)e.NewSize.Height;
+                Renderer.Height = (int)e.NewSize.Height - 30;
+                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             };
 
             //Mouse drag handler
