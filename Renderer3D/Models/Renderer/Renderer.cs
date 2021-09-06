@@ -17,7 +17,7 @@ namespace Renderer3D.Models.Renderer
 
         private int _width = 800;
         private int _height = 600;
-        private Vector3 _eye = new Vector3 { X = 1, Y = 1, Z = 1 };
+        private Vector3 _scale = new Vector3 { X = 1f, Y = 1f, Z = 1f };
 
         /// <summary>
         /// Format of pixels for rendered bitmap
@@ -62,21 +62,24 @@ namespace Renderer3D.Models.Renderer
             }
         }
 
-        public Vector3 Eye
+        public Vector3 Scale
         {
             get
             {
-                return _eye;
+                return _scale;
             }
             set
             {
-                if (_eye != value)
+                if (_scale != value)
                 {
-                    _eye = value;
+                    _scale = value;
                     UpdateWritableBitmap();
                 }
             }
         }
+
+        public Vector3 Eye { get; set;} = new Vector3 { X=1, Y=1,Z=1 };
+        
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -103,6 +106,12 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 0, Y = 1, Z = 0 };
 
+        public float RotationX { get; set;}
+
+        public float RotationY { get; set;}
+
+        public Vector3 Offset { get; set;} = new Vector3 { X = 0, Y = 0, Z = 0 };
+
 
         /// <summary>
         /// Parsed model to render on bitmap
@@ -115,6 +124,7 @@ namespace Renderer3D.Models.Renderer
         {
             (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
             UpdateWritableBitmap();
+
         }
 
         private void UpdateWritableBitmap()
@@ -129,13 +139,15 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
+            _bitmap.Clear(Colors.White);
+
             var vertices = new Point[ObjectModel.Vertices.Length];
 
             //Translate each vertex from model to view port
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
                 //Apply any moving, rotation, etc. to this vertex using model specific matrix
-                var modelVert = ObjectModel.Vertices[i];
+                var modelVert = ObjectModel.Vertices[i].Scale(Scale).RotateX(RotationX).RotateY(RotationY).Move(Offset);
                 var viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
                 var projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
                 var portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));

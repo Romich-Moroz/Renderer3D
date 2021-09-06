@@ -108,19 +108,19 @@ namespace Renderer3D.Models.Translation
         /// <summary>
         /// Creates view matrix for further transformation
         /// </summary>
-        /// <param name="cameraPosition">Original camera position</param>
-        /// <param name="targetPosition">Location where the camera actually looks</param>
+        /// <param name="eye">Original camera position</param>
+        /// <param name="target">Location where the camera actually looks</param>
         /// <param name="upVector">Vector pointing straight up from camera point of view</param>
         /// <returns>View matrix for translation</returns>
-        public static Matrix4x4 CreateViewMatrix(Vector3 cameraPosition, Vector3 targetPosition, Vector3 upVector)
+        public static Matrix4x4 CreateViewMatrix(Vector3 eye, Vector3 target, Vector3 upVector)
         {
-            var zAxis = Vector3.Normalize(Vector3.Subtract(cameraPosition, targetPosition));
+            var zAxis = Vector3.Normalize(eye - target);
             var xAxis = Vector3.Normalize(Vector3.Cross(upVector, zAxis));
             var yAxis = upVector;
 
-            var dotX = Vector3.Dot(xAxis, cameraPosition);
-            var dotY = Vector3.Dot(yAxis, cameraPosition);
-            var dotZ = Vector3.Dot(zAxis, cameraPosition);
+            var dotX = Vector3.Dot(xAxis, eye);
+            var dotY = Vector3.Dot(yAxis, eye);
+            var dotZ = Vector3.Dot(zAxis, eye);
 
             return new Matrix4x4
             {
