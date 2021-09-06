@@ -1,14 +1,14 @@
-﻿using Renderer3D.Viewmodels.Commands;
-using Renderer3D.Models.Parser;
+﻿using Renderer3D.Models.Parser;
 using Renderer3D.Models.Renderer;
+using Renderer3D.Viewmodels.Commands;
 using System.ComponentModel;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Numerics;
 
 namespace Renderer3D.Viewmodels
 {
@@ -19,8 +19,8 @@ namespace Renderer3D.Viewmodels
         public ICommand MouseMoveCommand { get; }
         public ICommand MouseWheelCommand { get; }
         public ICommand KeyDownCommand { get; }
-        public Point PreviousPosition { get; set;}
-        public float Sensitivity { get; set;} = (float)System.Math.PI/360;
+        public Point PreviousPosition { get; set; }
+        public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
         public float MoveStep { get; set; } = 0.25f;
         public float ScaleStep { get; set; } = 0.05f;
 
@@ -52,24 +52,27 @@ namespace Renderer3D.Viewmodels
                 }
                 else
                 {
-                    var currentPos = Mouse.GetPosition(Application.Current.MainWindow);
-                    var x = currentPos.X - PreviousPosition.X;
-                    var y = currentPos.Y - PreviousPosition.Y;
-                    Renderer.RotationY += (float)x*Sensitivity;
-                    Renderer.RotationX += (float)y*Sensitivity;
+                    Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
+                    double x = currentPos.X - PreviousPosition.X;
+                    double y = currentPos.Y - PreviousPosition.Y;
+                    Renderer.RotationY += (float)x * Sensitivity;
+                    Renderer.RotationX += (float)y * Sensitivity;
                     PreviousPosition = currentPos;
                 }
-                
+
                 Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
-            }, (args) =>  
+            }, (args) =>
             {
                 if (args.LeftButton == MouseButtonState.Pressed)
+                {
                     return true;
+                }
+
                 PreviousPosition = new Point { X = -1, Y = -1 };
                 return false;
             });
 
-            MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) => 
+            MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) =>
             {
                 if (args.Delta > 0)
                 {
@@ -82,24 +85,44 @@ namespace Renderer3D.Viewmodels
                 Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             }, null);
 
-            KeyDownCommand = new RelayCommand<KeyEventArgs>((args) => 
+            KeyDownCommand = new RelayCommand<KeyEventArgs>((args) =>
             {
-                var moveKeyPressed = args.Key == Key.A || args.Key == Key.W || args.Key == Key.S || args.Key == Key.D || args.Key == Key.Q || args.Key == Key.E;
+                bool moveKeyPressed = args.Key == Key.A || args.Key == Key.W || args.Key == Key.S || args.Key == Key.D || args.Key == Key.Q || args.Key == Key.E;
                 if (args.Key == Key.A)
+                {
                     Renderer.Offset += new Vector3 { X = -1, Y = 0, Z = 0 } * MoveStep;
+                }
+
                 if (args.Key == Key.D)
+                {
                     Renderer.Offset += new Vector3 { X = 1, Y = 0, Z = 0 } * MoveStep;
+                }
+
                 if (args.Key == Key.W)
+                {
                     Renderer.Offset += new Vector3 { X = 0, Y = 1, Z = 0 } * MoveStep;
+                }
+
                 if (args.Key == Key.S)
+                {
                     Renderer.Offset += new Vector3 { X = 0, Y = -1, Z = 0 } * MoveStep;
+                }
+
                 if (args.Key == Key.Q)
+                {
                     Renderer.Offset += new Vector3 { X = 0, Y = 0, Z = 1 } * MoveStep;
+                }
+
                 if (args.Key == Key.E)
+                {
                     Renderer.Offset += new Vector3 { X = 0, Y = 0, Z = -1 } * MoveStep;
+                }
+
                 if (moveKeyPressed)
+                {
                     Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
-            },null);
+                }
+            }, null);
 
             //Initial render
             Frame = Renderer.Render();

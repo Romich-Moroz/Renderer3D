@@ -25,7 +25,9 @@ namespace Renderer3D.Models.Parser
         /// </summary>
         public Polygon[] Polygons { get; }
 
-        public ObjectModel(Vector4[] vertices, Vector3[] texturePieces, Vector3[] normalVectors, Polygon[] polygons) =>
+        public ObjectModel(Vector4[] vertices, Vector3[] texturePieces, Vector3[] normalVectors, Polygon[] polygons)
+        {
             (Vertices, TexturePieces, NormalVectors, Polygons) = (vertices, texturePieces, normalVectors, polygons);
+        }
     }
 }

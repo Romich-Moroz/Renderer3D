@@ -29,10 +29,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public int Width
         {
-            get
-            {
-                return _width;
-            }
+            get => _width;
             set
             {
                 if (_width != value)
@@ -48,10 +45,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public int Height
         {
-            get
-            {
-                return _height;
-            }
+            get => _height;
             set
             {
                 if (_height != value)
@@ -64,10 +58,7 @@ namespace Renderer3D.Models.Renderer
 
         public Vector3 Scale
         {
-            get
-            {
-                return _scale;
-            }
+            get => _scale;
             set
             {
                 if (_scale != value)
@@ -78,8 +69,8 @@ namespace Renderer3D.Models.Renderer
             }
         }
 
-        public Vector3 Eye { get; set;} = new Vector3 { X=1, Y=1,Z=1 };
-        
+        public Vector3 Eye { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
+
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -94,23 +85,23 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Camera field of view
         /// </summary>
-        public float Fov { get; set;} = (float)System.Math.PI / 4;
+        public float Fov { get; set; } = (float)System.Math.PI / 4;
 
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 TargetLocation { get; set;} = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 TargetLocation { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 0, Y = 1, Z = 0 };
+        public Vector3 CameraUpVector { get; set; } = new Vector3 { X = 0, Y = 1, Z = 0 };
 
-        public float RotationX { get; set;}
+        public float RotationX { get; set; }
 
-        public float RotationY { get; set;}
+        public float RotationY { get; set; }
 
-        public Vector3 Offset { get; set;} = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
 
         /// <summary>
@@ -141,22 +132,22 @@ namespace Renderer3D.Models.Renderer
         {
             _bitmap.Clear(Colors.White);
 
-            var vertices = new Point[ObjectModel.Vertices.Length];
+            Point[] vertices = new Point[ObjectModel.Vertices.Length];
 
             //Translate each vertex from model to view port
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
                 //Apply any moving, rotation, etc. to this vertex using model specific matrix
-                var modelVert = ObjectModel.Vertices[i].Scale(Scale).RotateX(RotationX).RotateY(RotationY).Move(Offset);
-                var viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
-                var projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
-                var portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
+                Vector4 modelVert = ObjectModel.Vertices[i].Scale(Scale).RotateX(RotationX).RotateY(RotationY).Move(Offset);
+                Vector4 viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
+                Vector4 projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
+                Vector4 portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
 
                 vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
             }
 
             //Connect vertices of polygons
-            _bitmap.DrawPolygons(ObjectModel.Polygons,vertices,Colors.Black);
+            _bitmap.DrawPolygons(ObjectModel.Polygons, vertices, Colors.Black);
 
             //_bitmap.Freeze();
             return _bitmap;
