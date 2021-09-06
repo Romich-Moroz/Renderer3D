@@ -16,6 +16,7 @@ namespace Renderer3D.Viewmodels
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
         public BitmapSource Frame { get; private set; }
         public ICommand MouseMoveCommand { get; }
+        public ICommand MouseWheelCommand { get; }
 
         private Renderer Renderer { get; }
 
@@ -38,6 +39,19 @@ namespace Renderer3D.Viewmodels
             {
                 Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             }, (args) => args.LeftButton == MouseButtonState.Pressed);
+
+            MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) => 
+            {
+                if (args.Delta > 0)
+                {
+                    Renderer.Eye += new System.Numerics.Vector3 { X = 1, Y = 1, Z = 1 };
+                }
+                else
+                {
+                    Renderer.Eye -= new System.Numerics.Vector3 { X = 1, Y = 1, Z = 1 };
+                }
+                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+            }, null);
 
             //Initial render
             Frame = Renderer.Render();
