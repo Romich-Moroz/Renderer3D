@@ -103,6 +103,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 0, Y = 1, Z = 0 };
 
+
         /// <summary>
         /// Parsed model to render on bitmap
         /// </summary>
@@ -134,7 +135,7 @@ namespace Renderer3D.Models.Renderer
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
                 //Apply any moving, rotation, etc. to this vertex using model specific matrix
-                var modelVert = ObjectModel.Vertices[i].Scale(Eye);
+                var modelVert = ObjectModel.Vertices[i];
                 var viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
                 var projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
                 var portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
@@ -143,24 +144,7 @@ namespace Renderer3D.Models.Renderer
             }
 
             //Connect vertices of polygons
-            for (int i = 0; i < ObjectModel.Polygons.Length; i++)
-            {
-                for (int j = 0; j < ObjectModel.Polygons[i].Vertices.Length - 1; j++)
-                {
-                    _bitmap.DrawLineDda
-                    (
-                        vertices[ObjectModel.Polygons[i].Vertices[j].VertexIndex],
-                        vertices[ObjectModel.Polygons[i].Vertices[j + 1].VertexIndex],
-                        Colors.Black
-                    );
-                }
-                _bitmap.DrawLineDda
-                (
-                    vertices[ObjectModel.Polygons[i].Vertices[ObjectModel.Polygons[i].Vertices.Length - 1].VertexIndex],
-                    vertices[ObjectModel.Polygons[i].Vertices[0].VertexIndex],
-                    Colors.Black
-                );
-            }
+            _bitmap.DrawPolygons(ObjectModel.Polygons,vertices,Colors.Black);
 
             //_bitmap.Freeze();
             return _bitmap;
