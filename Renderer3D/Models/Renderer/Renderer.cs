@@ -47,7 +47,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Current position of the camera itself
         /// </summary>
-        public Vector3 EyeLocation { get; set;} = new Vector3 { X = 100, Y = 100, Z = 100 };
+        public Vector3 EyeLocation { get; set;} = new Vector3 { X = 1, Y = 1, Z = 1 };
 
         /// <summary>
         /// Position where the camera actually looks
@@ -57,7 +57,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 100, Y = 101, Z = 100 };
+        public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 0, Y = 1, Z = 0 };
 
         /// <summary>
         /// Parsed model to render on bitmap
@@ -90,22 +90,19 @@ namespace Renderer3D.Models.Renderer
                 UpdateWritableBitmap();
             }
 
-            //Generate viewport projection view matrix
-            var vppvMatrix = Translator.CreateViewportMatrix(Width, Height) * Translator.CreateProjectionMatrix(AspectRatio, Fov) * Translator.CreateViewMatrix(EyeLocation, TargetLocation, CameraUpVector);
-
             var vertices = new Point[ObjectModel.Vertices.Length];
 
             //Translate each vertex from model to view port
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
-                //Apply any moving, rotation, etc.. to this matrix
-                var modelMatrix = ObjectModel.Vertices[i].ToMatrix4x4();
+                //Apply any moving, rotation, etc. to this vertex using model specific matrix
+                var modelVert = ObjectModel.Vertices[i].RotateX(0).RotateY(0);
+                var viewVert = modelVert.Translate(Translator.CreateViewMatrix(EyeLocation, TargetLocation, CameraUpVector));
+                var projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
+                var portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
+                //var portVert = projVert;
 
-                //
-                var translationMatrix = Matrix4x4.Multiply(vppvMatrix, modelMatrix);
-                vertices[i] = ObjectModel.Vertices[i]
-                    .Translate(translationMatrix)
-                    .ToPoint();
+                vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
             }
 
             //Connect vertices of polygons

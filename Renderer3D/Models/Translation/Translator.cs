@@ -11,7 +11,7 @@ namespace Renderer3D.Models.Translation
     /// </summary>
     public static class Translator
     {
-        private static Matrix4x4 CreateMovingMatrix(Vector3 offset)
+        public static Matrix4x4 CreateMovingMatrix(Vector3 offset)
         {
             return new Matrix4x4 
             {
@@ -22,7 +22,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateScaleMatrix(Vector3 offset)
+        public static Matrix4x4 CreateScaleMatrix(Vector3 offset)
         {
             return new Matrix4x4 
             {
@@ -32,7 +32,7 @@ namespace Renderer3D.Models.Translation
                 M41 = 0,        M42 = 0,        M43 = 0,        M44 = 1
             };
         }
-        private static Matrix4x4 CreateXRotationMatrix(float angle)
+        public static Matrix4x4 CreateXRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -43,7 +43,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateYRotationMatrix(float angle)
+        public static Matrix4x4 CreateYRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -54,7 +54,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateZRotationMatrix(float angle)
+        public static Matrix4x4 CreateZRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -184,13 +184,6 @@ namespace Renderer3D.Models.Translation
             );
         }
 
-        public static Point ToPoint(this Vector4 vector) => new Point { X = vector.X, Y = vector.Y };
-        public static Matrix4x4 ToMatrix4x4(this Vector4 vector) => new Matrix4x4 
-        {
-            M11 = vector.X, M12 = 0, M13 = 0, M14 = 0,
-            M21 = 0, M22 = vector.Y, M23 = 0, M24 = 0,
-            M31 = 0, M32 = 0, M33 = vector.Z, M34 = 0,
-            M41 = 0, M42 = 0, M43 = 0, M44 = vector.W
-        };
+        public static Vector4 Normalize(this Vector4 vector) => new Vector4 { X = vector.X/vector.W, Y = vector.Y/vector.W, Z = vector.Z/vector.W, W = 1 };
     }
 }

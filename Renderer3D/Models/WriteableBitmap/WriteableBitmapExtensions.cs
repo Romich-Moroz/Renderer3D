@@ -62,7 +62,10 @@ namespace Renderer3D.Models.WritableBitmap
             var yDelta = y2y1/l;
             for (int i = 0; i < l; i++)
             {
-                bitmap.DrawPixel(new Point { X = x1.X + i * xDelta, Y = x1.Y + i * yDelta }, color);
+                if ((x1.X + i * xDelta >= 0 && x1.Y + i * yDelta >= 0) && (x1.X + i * xDelta < bitmap.PixelWidth && x1.Y + i * yDelta < bitmap.PixelHeight))
+                {
+                    bitmap.DrawPixel(new Point { X = x1.X + i * xDelta, Y = x1.Y + i * yDelta }, color);
+                }
             }
         }
 
