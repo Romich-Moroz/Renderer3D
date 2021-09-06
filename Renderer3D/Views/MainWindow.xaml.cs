@@ -12,7 +12,7 @@ namespace Renderer3D.Views
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new RendererViewmodel(this, PixelFormats.Rgba64);
+            DataContext = new RendererViewmodel(this, PixelFormats.Bgr32);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Render3D.Viewmodels.Commands;
+﻿using Renderer3D.Viewmodels.Commands;
 using Renderer3D.Models.Parser;
 using Renderer3D.Models.Renderer;
 using System.ComponentModel;
@@ -16,6 +16,7 @@ namespace Renderer3D.Viewmodels
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
         public BitmapSource Frame { get; private set; }
         public ICommand MouseMoveCommand { get; }
+        public ICommand MouseWheelCommand { get; }
 
         private Renderer Renderer { get; }
 
@@ -29,7 +30,8 @@ namespace Renderer3D.Viewmodels
             window.SizeChanged += (sender, e) =>
             {
                 Renderer.Width = (int)e.NewSize.Width;
-                Renderer.Height = (int)e.NewSize.Height;
+                Renderer.Height = (int)e.NewSize.Height - 30;
+                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             };
 
             //Mouse drag handler
@@ -37,6 +39,19 @@ namespace Renderer3D.Viewmodels
             {
                 Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
             }, (args) => args.LeftButton == MouseButtonState.Pressed);
+
+            MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) => 
+            {
+                if (args.Delta > 0)
+                {
+                    Renderer.Eye += new System.Numerics.Vector3 { X = 1, Y = 1, Z = 1 };
+                }
+                else
+                {
+                    Renderer.Eye -= new System.Numerics.Vector3 { X = 1, Y = 1, Z = 1 };
+                }
+                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+            }, null);
 
             //Initial render
             Frame = Renderer.Render();

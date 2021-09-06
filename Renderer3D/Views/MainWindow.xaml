@@ -12,6 +12,9 @@
             <i:EventTrigger EventName="MouseMove">
                 <i:InvokeCommandAction Command="{Binding MouseMoveCommand}" PassEventArgsToCommand="True"/>
             </i:EventTrigger>
+            <i:EventTrigger EventName="MouseWheel">
+                <i:InvokeCommandAction Command="{Binding MouseWheelCommand}" PassEventArgsToCommand="True"/>
+            </i:EventTrigger>
         </i:Interaction.Triggers>
     </Image>
 </Window>

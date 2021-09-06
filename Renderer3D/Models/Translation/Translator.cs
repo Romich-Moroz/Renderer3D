@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using System.Windows;
 
 namespace Renderer3D.Models.Translation
 {
     /// <summary>
     /// Matrix translation library
     /// </summary>
-    public static class Translation
+    public static class Translator
     {
-        private static Matrix4x4 CreateMovingMatrix(Vector3 offset)
+        public static Matrix4x4 CreateMovingMatrix(Vector3 offset)
         {
             return new Matrix4x4 
             {
@@ -21,7 +22,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateScaleMatrix(Vector3 offset)
+        public static Matrix4x4 CreateScaleMatrix(Vector3 offset)
         {
             return new Matrix4x4 
             {
@@ -31,7 +32,7 @@ namespace Renderer3D.Models.Translation
                 M41 = 0,        M42 = 0,        M43 = 0,        M44 = 1
             };
         }
-        private static Matrix4x4 CreateXRotationMatrix(float angle)
+        public static Matrix4x4 CreateXRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -42,7 +43,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateYRotationMatrix(float angle)
+        public static Matrix4x4 CreateYRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -53,7 +54,7 @@ namespace Renderer3D.Models.Translation
             };
         }
 
-        private static Matrix4x4 CreateZRotationMatrix(float angle)
+        public static Matrix4x4 CreateZRotationMatrix(float angle)
         {
             return new Matrix4x4 
             {
@@ -70,7 +71,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="objectVertex">Vertex to move</param>
         /// <param name="locationOffset">Offset from original object position</param>
         /// <returns>Offseted vertex</returns>
-        public static Vector4 WorldMove(Vector4 objectVertex, Vector3 locationOffset) => Vector4.Transform(objectVertex, CreateMovingMatrix(locationOffset));
+        public static Vector4 Move(this Vector4 objectVertex, Vector3 locationOffset) => objectVertex.Translate(CreateMovingMatrix(locationOffset));
 
         /// <summary>
         /// Scales vertex to new coordinates
@@ -78,7 +79,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="objectVertex">Vertex to scale</param>
         /// <param name="scale">Scalling vector for each axis</param>
         /// <returns>Scalled vertex</returns>
-        public static Vector4 WorldScale(Vector4 objectVertex, Vector3 scale) => Vector4.Transform(objectVertex, CreateScaleMatrix(scale));
+        public static Vector4 Scale(this Vector4 objectVertex, Vector3 scale) => objectVertex.Translate(CreateScaleMatrix(scale));
 
         /// <summary>
         /// Rotates vertex around X axis
@@ -86,7 +87,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="objectVertex">Vertex to rotate</param>
         /// <param name="angle">Angle of rotation</param>
         /// <returns>Rotated vertex</returns>
-        public static Vector4 WorldRotateX(Vector4 objectVertex, float angle) => Vector4.Transform(objectVertex, CreateXRotationMatrix(angle));
+        public static Vector4 RotateX(this Vector4 objectVertex, float angle) => objectVertex.Translate(CreateXRotationMatrix(angle));
 
         /// <summary>
         /// Rotates vertex around Y axis
@@ -94,7 +95,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="objectVertex">Vertex to rotate</param>
         /// <param name="angle">Angle of rotation</param>
         /// <returns>Rotated vertex</returns>
-        public static Vector4 WorldRotateY(Vector4 objectVertex, float angle) => Vector4.Transform(objectVertex, CreateYRotationMatrix(angle));
+        public static Vector4 RotateY(this Vector4 objectVertex, float angle) => objectVertex.Translate(CreateYRotationMatrix(angle));
 
         /// <summary>
         /// Rotates vertex around Z axis
@@ -102,7 +103,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="objectVertex">Vertex to rotate</param>
         /// <param name="angle">Angle of rotation</param>
         /// <returns>Rotated vertex</returns>
-        public static Vector4 WorldRotateZ(Vector4 objectVertex, float angle) => Vector4.Transform(objectVertex, CreateZRotationMatrix(angle));
+        public static Vector4 RotateZ(this Vector4 objectVertex, float angle) => objectVertex.Translate(CreateZRotationMatrix(angle));
 
         /// <summary>
         /// Creates view matrix for further transformation
@@ -137,7 +138,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="zFar">Distance from furthest plane to the camera</param>
         /// <param name="zNear">Distance from the closest plane to the camera</param>
         /// <returns>Projection matrix for translation</returns>
-        public static Matrix4x4 CreateProjectionMatrix(float aspectRatio, float fov, float zFar, float zNear)
+        public static Matrix4x4 CreateProjectionMatrix(float aspectRatio, float fov, float zFar = 100, float zNear = 1)
         {
             return new Matrix4x4
             {
@@ -155,7 +156,7 @@ namespace Renderer3D.Models.Translation
         /// <param name="height">Height of the screen</param>
         /// <param name="xMin">Min screen coordinate of x axis</param>
         /// <param name="yMin">Min screen coordinate of y axis</param>
-        /// <returns></returns>
+        /// <returns>Viewport patrix for translation</returns>
         public static Matrix4x4 CreateViewportMatrix(float width, float height, int xMin = 0, int yMin = 0)
         {
             return new Matrix4x4
@@ -172,7 +173,17 @@ namespace Renderer3D.Models.Translation
         /// </summary>
         /// <param name="vector">Vector to translate</param>
         /// <param name="matrix">Matrix used for translation</param>
-        /// <returns></returns>
-        public static Vector4 Translate(Vector4 vector, Matrix4x4 matrix) => Vector4.Transform(vector, matrix);
+        /// <returns>Translated vector</returns>
+        public static Vector4 Translate(this Vector4 self, Matrix4x4 matrix)
+        {
+            return new Vector4(
+                matrix.M11 * self.X + matrix.M12 * self.Y + matrix.M13 * self.Z + matrix.M14 * self.W,
+                matrix.M21 * self.X + matrix.M22 * self.Y + matrix.M23 * self.Z + matrix.M24 * self.W,
+                matrix.M31 * self.X + matrix.M32 * self.Y + matrix.M33 * self.Z + matrix.M34 * self.W,
+                matrix.M41 * self.X + matrix.M42 * self.Y + matrix.M43 * self.Z + matrix.M44 * self.W
+            );
+        }
+
+        public static Vector4 Normalize(this Vector4 vector) => new Vector4 { X = vector.X/vector.W, Y = vector.Y/vector.W, Z = vector.Z/vector.W, W = 1 };
     }
 }
