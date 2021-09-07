@@ -2,6 +2,7 @@
 using Renderer3D.Models.Translation;
 using Renderer3D.Models.WritableBitmap;
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Media;
@@ -17,7 +18,7 @@ namespace Renderer3D.Models.Renderer
 
         private int _width = 800;
         private int _height = 600;
-        private Vector3 _eye = new Vector3 { X = 1, Y = 1, Z = 1 };
+        private Vector3 _scale = new Vector3 { X = 1f, Y = 1f, Z = 1f };
 
         /// <summary>
         /// Format of pixels for rendered bitmap
@@ -29,10 +30,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public int Width
         {
-            get
-            {
-                return _width;
-            }
+            get => _width;
             set
             {
                 if (_width != value)
@@ -48,10 +46,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public int Height
         {
-            get
-            {
-                return _height;
-            }
+            get => _height;
             set
             {
                 if (_height != value)
@@ -62,21 +57,21 @@ namespace Renderer3D.Models.Renderer
             }
         }
 
-        public Vector3 Eye
+        public Vector3 Scale
         {
-            get
-            {
-                return _eye;
-            }
+            get => _scale;
             set
             {
-                if (_eye != value)
+                if (_scale != value)
                 {
-                    _eye = value;
+                    _scale = value;
                     UpdateWritableBitmap();
                 }
             }
         }
+
+        public Vector3 Eye { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
+
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -91,17 +86,26 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Camera field of view
         /// </summary>
-        public float Fov { get; set;} = (float)System.Math.PI / 4;
+        public float Fov { get; set; } = (float)System.Math.PI / 4;
 
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 TargetLocation { get; set;} = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 TargetLocation { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set;} = new Vector3 { X = 0, Y = 1, Z = 0 };
+        public Vector3 CameraUpVector { get; set; } = new Vector3 { X = 0, Y = 1, Z = 0 };
+
+        public float RotationX { get; set; }
+
+        public float RotationY { get; set; }
+
+        public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+
+        private Stopwatch Stopwatch = new Stopwatch();
+        private Point[] Vertices { get; set; }
 
 
         /// <summary>
@@ -115,12 +119,13 @@ namespace Renderer3D.Models.Renderer
         {
             (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
             UpdateWritableBitmap();
+            Vertices = new Point[ObjectModel.Vertices.Length];
         }
 
         private void UpdateWritableBitmap()
         {
             _bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride));
-            _bitmap.Clear(Colors.White);
+            _bitmap.Clear();
         }
 
         /// <summary>
@@ -129,23 +134,37 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
-            var vertices = new Point[ObjectModel.Vertices.Length];
+            Debug.WriteLine("Render started");
+            Stopwatch.Restart();
 
-            //Translate each vertex from model to view port
+            _bitmap.Clear();
+            Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
+
+            var translation = Translator.CreateViewportMatrix(Width, Height) *
+                              Translator.CreateProjectionMatrix(AspectRatio, Fov) *
+                              Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector) *
+                              Translator.CreateScaleMatrix(Scale) *
+                              Translator.CreateXRotationMatrix(RotationX) *
+                              Translator.CreateYRotationMatrix(RotationY) *
+                              Translator.CreateMovingMatrix(Offset);
+            Debug.WriteLine($"Translation matrix time: {Stopwatch.ElapsedMilliseconds}");
+
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
-                //Apply any moving, rotation, etc. to this vertex using model specific matrix
-                var modelVert = ObjectModel.Vertices[i];
-                var viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
-                var projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
-                var portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
+                Vector4 portVert = ObjectModel.Vertices[i]
+                    .Translate(translation)
+                    .Normalize();
 
-                vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
             }
+            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
 
             //Connect vertices of polygons
-            _bitmap.DrawPolygons(ObjectModel.Polygons,vertices,Colors.Black);
+            _bitmap.DrawPolygons(ObjectModel.Polygons, Vertices, Colors.Black);
 
+            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
+            Debug.WriteLine("Render ended\n");
+            Stopwatch.Stop();
             //_bitmap.Freeze();
             return _bitmap;
         }
