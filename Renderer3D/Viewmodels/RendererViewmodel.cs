@@ -32,7 +32,7 @@ namespace Renderer3D.Viewmodels
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/Klesk/klesk.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
-            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/Head/head.obj");
+            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Head/head.obj");
             Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
 
             //Window resize handler

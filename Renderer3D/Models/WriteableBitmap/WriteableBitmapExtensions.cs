@@ -1,5 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -11,6 +12,9 @@ namespace Renderer3D.Models.WritableBitmap
     /// </summary>
     public static class WriteableBitmapExtensions
     {
+        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
+        public static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
+
         public static void DrawLine(this WriteableBitmap bitmap, Point x1, Point x2, Color color)
         {
             throw new NotImplementedException();
@@ -99,35 +103,33 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        public static void Clear(this WriteableBitmap bitmap, Color color)
+        private static byte[] _blankBuffer;
+
+        public static void Clear(this WriteableBitmap bitmap)
         {
+            var bitmapLength = bitmap.PixelWidth * bitmap.PixelHeight * 4;
+            if (_blankBuffer == null || _blankBuffer.Length != bitmapLength)
+            {
+                _blankBuffer = new byte[bitmapLength];
+            }
+
             try
             {
                 // Reserve the back buffer for updates.
-                bitmap.Lock();
-
                 unsafe
                 {
-                    // Get a pointer to the back buffer.
-                    IntPtr pBackBuffer = bitmap.BackBuffer;
-
-                    // Compute the pixel's color.
-                    int color_data = color.ToInt();
-
-                    for (int i = 0; i < bitmap.Width * bitmap.PixelHeight; i++)
+                    fixed (byte* b = _blankBuffer)
                     {
-                        // Assign the color data to the pixel.
-                        *((int*)pBackBuffer) = color_data;
-                        pBackBuffer += 4;
+                        System.Runtime.CompilerServices.Unsafe.InitBlock(b, 255, (uint)_blankBuffer.Length);
+                        CopyMemory(bitmap.BackBuffer, (IntPtr)b, (uint)_blankBuffer.Length);
                     }
                 }
 
-                // Specify the area of the bitmap that changed.
+                bitmap.Lock();
                 bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
             }
             finally
             {
-                // Release the back buffer and make it available for display.
                 bitmap.Unlock();
             }
         }

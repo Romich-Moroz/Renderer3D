@@ -2,6 +2,7 @@
 using Renderer3D.Models.Translation;
 using Renderer3D.Models.WritableBitmap;
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Media;
@@ -103,6 +104,9 @@ namespace Renderer3D.Models.Renderer
 
         public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
+        private Stopwatch Stopwatch = new Stopwatch();
+        private Point[] Vertices { get; set; }
+
 
         /// <summary>
         /// Parsed model to render on bitmap
@@ -115,13 +119,13 @@ namespace Renderer3D.Models.Renderer
         {
             (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
             UpdateWritableBitmap();
-
+            Vertices = new Point[ObjectModel.Vertices.Length];
         }
 
         private void UpdateWritableBitmap()
         {
             _bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride));
-            _bitmap.Clear(Colors.White);
+            _bitmap.Clear();
         }
 
         /// <summary>
@@ -130,25 +134,37 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
-            _bitmap.Clear(Colors.White);
+            Debug.WriteLine("Render started");
+            Stopwatch.Restart();
 
-            Point[] vertices = new Point[ObjectModel.Vertices.Length];
+            _bitmap.Clear();
+            Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
 
-            //Translate each vertex from model to view port
+            var translation = Translator.CreateViewportMatrix(Width, Height) *
+                              Translator.CreateProjectionMatrix(AspectRatio, Fov) *
+                              Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector) *
+                              Translator.CreateScaleMatrix(Scale) *
+                              Translator.CreateXRotationMatrix(RotationX) *
+                              Translator.CreateYRotationMatrix(RotationY) *
+                              Translator.CreateMovingMatrix(Offset);
+            Debug.WriteLine($"Translation matrix time: {Stopwatch.ElapsedMilliseconds}");
+
             for (int i = 0; i < ObjectModel.Vertices.Length; i++)
             {
-                //Apply any moving, rotation, etc. to this vertex using model specific matrix
-                Vector4 modelVert = ObjectModel.Vertices[i].Scale(Scale).RotateX(RotationX).RotateY(RotationY).Move(Offset);
-                Vector4 viewVert = modelVert.Translate(Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector));
-                Vector4 projVert = viewVert.Translate(Translator.CreateProjectionMatrix(AspectRatio, Fov)).Normalize();
-                Vector4 portVert = projVert.Translate(Translator.CreateViewportMatrix(Width, Height));
+                Vector4 portVert = ObjectModel.Vertices[i]
+                    .Translate(translation)
+                    .Normalize();
 
-                vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
             }
+            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
 
             //Connect vertices of polygons
-            _bitmap.DrawPolygons(ObjectModel.Polygons, vertices, Colors.Black);
+            _bitmap.DrawPolygons(ObjectModel.Polygons, Vertices, Colors.Black);
 
+            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
+            Debug.WriteLine("Render ended\n");
+            Stopwatch.Stop();
             //_bitmap.Freeze();
             return _bitmap;
         }
