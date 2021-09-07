@@ -1,6 +1,8 @@
 ﻿using Renderer3D.Models.Data;
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -107,7 +109,7 @@ namespace Renderer3D.Models.WritableBitmap
 
         public static void Clear(this WriteableBitmap bitmap)
         {
-            var bitmapLength = bitmap.PixelWidth * bitmap.PixelHeight * 4;
+            int bitmapLength = bitmap.PixelWidth * bitmap.PixelHeight * 4;
             if (_blankBuffer == null || _blankBuffer.Length != bitmapLength)
             {
                 _blankBuffer = new byte[bitmapLength];
@@ -146,49 +148,57 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     // Compute the pixel's color.
                     int color_data = color.ToInt();
+                    int pixelWidth = bitmap.PixelWidth;
+                    int pixelHight = bitmap.PixelHeight;
+                    IntPtr backBuffer = bitmap.BackBuffer;
+                    int stride = bitmap.BackBufferStride;
 
-                    for (int i = 0; i < polygons.Length; i++)
+                    Parallel.ForEach(Partitioner.Create(0, polygons.Length), Range =>
                     {
-                        for (int j = 0; j < polygons[i].Vertices.Length; j++)
+                        for (int i = Range.Item1; i < Range.Item2; i++)
                         {
-                            Point x1;
-                            Point x2;
-                            if (j < polygons[i].Vertices.Length - 1)
+                            for (int j = 0; j < polygons[i].Vertices.Length; j++)
                             {
-                                x1 = vertices[polygons[i].Vertices[j].VertexIndex];
-                                x2 = vertices[polygons[i].Vertices[j + 1].VertexIndex];
-                            }
-                            else
-                            {
-                                x1 = vertices[polygons[i].Vertices[polygons[i].Vertices.Length - 1].VertexIndex];
-                                x2 = vertices[polygons[i].Vertices[0].VertexIndex];
-                            }
-
-                            double x2x1 = x2.X - x1.X;
-                            double y2y1 = x2.Y - x1.Y;
-                            double l = Math.Abs(x2x1) > Math.Abs(y2y1) ? Math.Abs(x2x1) : Math.Abs(y2y1);
-                            double xDelta = x2x1 / l;
-                            double yDelta = y2y1 / l;
-
-                            for (int k = 0; k < l; k++)
-                            {
-                                double x = x1.X + k * xDelta;
-                                double y = x1.Y + k * yDelta;
-                                if ((x >= 0 && y >= 0) && (x < bitmap.PixelWidth && y < bitmap.PixelHeight))
+                                Point x1;
+                                Point x2;
+                                if (j < polygons[i].Vertices.Length - 1)
                                 {
-                                    // Find the address of the pixel to draw.
-                                    IntPtr pBackBuffer = bitmap.BackBuffer + (int)y * bitmap.BackBufferStride + (int)x * 4;
-
-                                    // Assign the color data to the pixel.
-                                    *((int*)pBackBuffer) = color_data;
+                                    x1 = vertices[polygons[i].Vertices[j].VertexIndex];
+                                    x2 = vertices[polygons[i].Vertices[j + 1].VertexIndex];
                                 }
                                 else
                                 {
-                                    break;
+                                    x1 = vertices[polygons[i].Vertices[polygons[i].Vertices.Length - 1].VertexIndex];
+                                    x2 = vertices[polygons[i].Vertices[0].VertexIndex];
+                                }
+
+                                double x2x1 = x2.X - x1.X;
+                                double y2y1 = x2.Y - x1.Y;
+                                double l = Math.Abs(x2x1) > Math.Abs(y2y1) ? Math.Abs(x2x1) : Math.Abs(y2y1);
+                                double xDelta = x2x1 / l;
+                                double yDelta = y2y1 / l;
+
+                                for (int k = 0; k < l; k++)
+                                {
+                                    double x = x1.X + k * xDelta;
+                                    double y = x1.Y + k * yDelta;
+                                    if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHight))
+                                    {
+                                        // Find the address of the pixel to draw.
+                                        IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
+
+                                        // Assign the color data to the pixel.
+                                        *((int*)pBackBuffer) = color_data;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
+
+                    });
                 }
 
                 // Specify the area of the bitmap that changed.

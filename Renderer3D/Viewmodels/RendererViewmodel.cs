@@ -26,6 +26,11 @@ namespace Renderer3D.Viewmodels
 
         private Renderer Renderer { get; }
 
+        private void UpdateFrame()
+        {
+            Frame = Renderer.Render();
+        }
+
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
         {
             //Init renderer (for test purposes change your model name here)
@@ -33,6 +38,7 @@ namespace Renderer3D.Viewmodels
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/Klesk/klesk.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
             ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Head/head.obj");
+            //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/King/king.obj");
             Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
 
             //Window resize handler
@@ -40,7 +46,8 @@ namespace Renderer3D.Viewmodels
             {
                 Renderer.Width = (int)e.NewSize.Width;
                 Renderer.Height = (int)e.NewSize.Height - 30;
-                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+
+                UpdateFrame();
             };
 
             //Mouse drag handler
@@ -59,8 +66,7 @@ namespace Renderer3D.Viewmodels
                     Renderer.RotationX += (float)y * Sensitivity;
                     PreviousPosition = currentPos;
                 }
-
-                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+                UpdateFrame();
             }, (args) =>
             {
                 if (args.LeftButton == MouseButtonState.Pressed)
@@ -82,7 +88,7 @@ namespace Renderer3D.Viewmodels
                 {
                     Renderer.Scale -= new Vector3 { X = ScaleStep, Y = ScaleStep, Z = ScaleStep };
                 }
-                Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+                UpdateFrame();
             }, null);
 
             KeyDownCommand = new RelayCommand<KeyEventArgs>((args) =>
@@ -120,7 +126,7 @@ namespace Renderer3D.Viewmodels
 
                 if (moveKeyPressed)
                 {
-                    Task.Factory.StartNew(() => { Frame = Renderer.Render(); }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+                    UpdateFrame();
                 }
             }, null);
 
