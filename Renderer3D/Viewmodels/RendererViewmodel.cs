@@ -3,8 +3,6 @@ using Renderer3D.Models.Renderer;
 using Renderer3D.Viewmodels.Commands;
 using System.ComponentModel;
 using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
