@@ -2,8 +2,10 @@
 using Renderer3D.Models.Translation;
 using Renderer3D.Models.WritableBitmap;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -15,15 +17,7 @@ namespace Renderer3D.Models.Renderer
     /// </summary>
     public class Renderer
     {
-
         private int _width = 800;
-        private int _height = 600;
-        private Vector3 _scale = new Vector3 { X = 1f, Y = 1f, Z = 1f };
-
-        /// <summary>
-        /// Format of pixels for rendered bitmap
-        /// </summary>
-        public PixelFormat PixelFormat { get; set; }
 
         /// <summary>
         /// Width of the bitmap
@@ -41,6 +35,8 @@ namespace Renderer3D.Models.Renderer
             }
         }
 
+        private int _height = 600;
+
         /// <summary>
         /// Height of the bitmap
         /// </summary>
@@ -57,21 +53,12 @@ namespace Renderer3D.Models.Renderer
             }
         }
 
-        public Vector3 Scale
-        {
-            get => _scale;
-            set
-            {
-                if (_scale != value)
-                {
-                    _scale = value;
-                    UpdateWritableBitmap();
-                }
-            }
-        }
-
+        /// <summary>
+        /// Format of pixels for rendered bitmap
+        /// </summary>
+        public readonly PixelFormat PixelFormat = PixelFormats.Bgr32;
+        public Vector3 Scale { get; set; } = new Vector3 { X = 1f, Y = 1f, Z = 1f };
         public Vector3 Eye { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
-
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -86,7 +73,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Camera field of view
         /// </summary>
-        public float Fov { get; set; } = (float)System.Math.PI / 4;
+        public float Fov { get; set; } = (float)Math.PI / 4;
 
         /// <summary>
         /// Position where the camera actually looks
@@ -104,7 +91,7 @@ namespace Renderer3D.Models.Renderer
 
         public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
-        private Stopwatch Stopwatch = new Stopwatch();
+        private readonly Stopwatch Stopwatch = new Stopwatch();
         private Point[] Vertices { get; set; }
 
 
@@ -134,38 +121,47 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
-            Debug.WriteLine("Render started");
+            Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
             Stopwatch.Restart();
 
             _bitmap.Clear();
             Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
 
-            var translation = Translator.CreateViewportMatrix(Width, Height) *
-                              Translator.CreateProjectionMatrix(AspectRatio, Fov) *
-                              Translator.CreateViewMatrix(Eye, TargetLocation, CameraUpVector) *
-                              Translator.CreateScaleMatrix(Scale) *
-                              Translator.CreateXRotationMatrix(RotationX) *
-                              Translator.CreateYRotationMatrix(RotationY) *
-                              Translator.CreateMovingMatrix(Offset);
+            Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
+                                    Matrix4x4.CreateRotationX(RotationX) *
+                                    Matrix4x4.CreateRotationY(RotationY) *
+                                    Matrix4x4.CreateTranslation(Offset) *
+                                    Matrix4x4.CreateLookAt(Eye, TargetLocation, CameraUpVector) *
+                                    Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
+
+            Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
             Debug.WriteLine($"Translation matrix time: {Stopwatch.ElapsedMilliseconds}");
 
-            for (int i = 0; i < ObjectModel.Vertices.Length; i++)
-            {
-                Vector4 portVert = ObjectModel.Vertices[i]
-                    .Translate(translation)
-                    .Normalize();
+            Parallel.ForEach(Partitioner.Create(0, ObjectModel.Vertices.Length), Range =>
+             {
+                 for (int i = Range.Item1; i < Range.Item2; i++)
+                 {
+                     Vector4 portVert = Vector4.Transform
+                     (
+                         Vector4.Transform
+                         (
+                             ObjectModel.Vertices[i],
+                             translationMatrix
+                         ).PerspectiveDivide(),
+                         viewportMatrix
+                     );
 
-                Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
-            }
+                     Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                 }
+             });
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
 
-            //Connect vertices of polygons
             _bitmap.DrawPolygons(ObjectModel.Polygons, Vertices, Colors.Black);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
             Debug.WriteLine("Render ended\n");
             Stopwatch.Stop();
-            //_bitmap.Freeze();
+
             return _bitmap;
         }
     }
