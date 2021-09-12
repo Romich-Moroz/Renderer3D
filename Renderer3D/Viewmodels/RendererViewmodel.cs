@@ -20,7 +20,7 @@ namespace Renderer3D.Viewmodels
         public Point PreviousPosition { get; set; }
         public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
         public float MoveStep { get; set; } = 0.25f;
-        public float ScaleStep { get; set; } = 0.05f;
+        public float ScaleStep { get; set; } = 1f;
 
         private Renderer Renderer { get; }
 
@@ -60,8 +60,8 @@ namespace Renderer3D.Viewmodels
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
                     double x = currentPos.X - PreviousPosition.X;
                     double y = currentPos.Y - PreviousPosition.Y;
-                    Renderer.RotationY += (float)x * Sensitivity;
-                    Renderer.RotationX += (float)y * Sensitivity;
+                    Renderer.RotateCameraY((float)x * Sensitivity);
+                    Renderer.RotateCameraX((float)y * Sensitivity);
                     PreviousPosition = currentPos;
                 }
                 UpdateFrame();
@@ -80,11 +80,11 @@ namespace Renderer3D.Viewmodels
             {
                 if (args.Delta > 0)
                 {
-                    Renderer.Scale += new Vector3 { X = ScaleStep, Y = ScaleStep, Z = ScaleStep };
+                    Renderer.OffsetCamera(new Vector3 { X = -ScaleStep, Y = -ScaleStep, Z = -ScaleStep });
                 }
                 else
                 {
-                    Renderer.Scale -= new Vector3 { X = ScaleStep, Y = ScaleStep, Z = ScaleStep };
+                    Renderer.OffsetCamera(new Vector3 { X = ScaleStep, Y = ScaleStep, Z = ScaleStep });
                 }
                 UpdateFrame();
             }, null);
@@ -131,7 +131,5 @@ namespace Renderer3D.Viewmodels
             //Initial render
             Frame = Renderer.Render();
         }
-
-
     }
 }
