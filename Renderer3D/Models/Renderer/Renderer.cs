@@ -58,7 +58,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public readonly PixelFormat PixelFormat = PixelFormats.Bgr32;
         public Vector3 Scale { get; set; } = new Vector3 { X = 1f, Y = 1f, Z = 1f };
-        public Vector3 Eye { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
+        public Vector3 CameraPosition { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -78,7 +78,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 TargetLocation { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 CameraTarget { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
         /// <summary>
         /// Vertical vector from camera stand point
@@ -131,7 +131,7 @@ namespace Renderer3D.Models.Renderer
                                     Matrix4x4.CreateRotationX(RotationX) *
                                     Matrix4x4.CreateRotationY(RotationY) *
                                     Matrix4x4.CreateTranslation(Offset) *
-                                    Matrix4x4.CreateLookAt(Eye, TargetLocation, CameraUpVector) *
+                                    Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector) *
                                     Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
 
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
