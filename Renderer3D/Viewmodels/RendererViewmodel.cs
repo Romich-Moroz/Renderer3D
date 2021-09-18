@@ -13,10 +13,12 @@ namespace Renderer3D.Viewmodels
     public class RendererViewmodel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
+
         public BitmapSource Frame { get; private set; }
         public ICommand MouseMoveCommand { get; }
         public ICommand MouseWheelCommand { get; }
         public ICommand KeyDownCommand { get; }
+
         public Point PreviousPosition { get; set; }
         public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
         public float MoveStep { get; set; } = 0.25f;
@@ -60,8 +62,10 @@ namespace Renderer3D.Viewmodels
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
                     double x = currentPos.X - PreviousPosition.X;
                     double y = currentPos.Y - PreviousPosition.Y;
-                    Renderer.RotateCameraY((float)x * Sensitivity);
-                    Renderer.RotateCameraX((float)y * Sensitivity);
+                    Renderer.RotateModelY((float)x * Sensitivity);
+                    Renderer.RotateModelX((float)y * Sensitivity);
+                    //Renderer.RotateCameraY((float)x * Sensitivity);
+                    //Renderer.RotateCameraX((float)y * Sensitivity);
                     PreviousPosition = currentPos;
                 }
                 UpdateFrame();

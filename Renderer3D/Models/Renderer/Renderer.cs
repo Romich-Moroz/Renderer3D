@@ -19,10 +19,11 @@ namespace Renderer3D.Models.Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private static readonly Vector3 DefaultUpVector = new Vector3 { X = 0, Y = 1, Z = 0 };
-        private Point[] Vertices { get; set; }
+        private Point[] _Vertices { get; set; }
         private WriteableBitmap _bitmap { get; set; }
-
         private int _width = 800;
+        private float _ModelRotationX = 0;
+        private float _ModelRotationY = 0;
 
         /// <summary>
         /// Width of the bitmap
@@ -143,7 +144,7 @@ namespace Renderer3D.Models.Renderer
             UpdateCameraUpVector();
 
             UpdateWritableBitmap();
-            Vertices = new Point[ObjectModel.Vertices.Length];
+            _Vertices = new Point[ObjectModel.Vertices.Length];
         }
 
 
@@ -161,6 +162,8 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
 
             Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
+                                    Matrix4x4.CreateRotationX(_ModelRotationX) *
+                                    Matrix4x4.CreateRotationY(_ModelRotationY) *
                                     Matrix4x4.CreateTranslation(Offset) *
                                     Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector) *
                                     Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
@@ -182,12 +185,12 @@ namespace Renderer3D.Models.Renderer
                          viewportMatrix
                      );
 
-                     Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                     _Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
                  }
              });
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
 
-            _bitmap.DrawPolygons(ObjectModel.Polygons, Vertices, Colors.Black);
+            _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
             Debug.WriteLine("Render ended\n");
@@ -204,6 +207,16 @@ namespace Renderer3D.Models.Renderer
         public void RotateCameraY(float angle)
         {
             RotateCamera(new Vector3 { X = 0, Y = 1, Z = 0 }, angle);
+        }
+
+        public void RotateModelX(float angle)
+        {
+            _ModelRotationX += angle;
+        }
+
+        public void RotateModelY(float angle)
+        {
+            _ModelRotationY += angle;
         }
 
         public void OffsetCamera(Vector3 offset)
