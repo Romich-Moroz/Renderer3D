@@ -18,6 +18,7 @@ namespace Renderer3D.Models.Renderer
     public class Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
+        private static readonly Vector3 DefaultUpVector = new Vector3 { X = 0, Y = 1, Z = 0 };
         private Point[] Vertices { get; set; }
         private WriteableBitmap _bitmap { get; set; }
 
@@ -91,7 +92,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set; } = new Vector3 { X = 0, Y = 1, Z = 0 };
+        public Vector3 CameraUpVector { get; set; } = DefaultUpVector;
 
         public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
 
@@ -110,9 +111,7 @@ namespace Renderer3D.Models.Renderer
         private void RotateCamera(Vector3 axis, float angle)
         {
             CameraPosition = Vector3.Transform(CameraPosition - CameraTarget, Matrix4x4.CreateFromAxisAngle(axis, angle)) + CameraTarget;
-            var lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
-            var rightVector = Vector3.Cross(lookVector, new Vector3 { X = 0, Y = 1, Z = 0 });
-            CameraUpVector = Vector3.Cross(rightVector, lookVector);
+            UpdateCameraUpVector();
         }
 
         private Vector3 FindGeometricAverage(Vector4[] vertices)
@@ -129,11 +128,19 @@ namespace Renderer3D.Models.Renderer
             return new Vector3 { X = (float)x/vertices.Length, Y = (float)y /vertices.Length, Z = (float)z /vertices.Length };
         }
 
+        private void UpdateCameraUpVector()
+        {
+            var lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
+            var rightVector = Vector3.Cross(lookVector, DefaultUpVector);
+            CameraUpVector = Vector3.Cross(rightVector, lookVector);
+        }
+
         public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model)
         {
             (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
 
             CameraTarget = FindGeometricAverage(model.Vertices);
+            UpdateCameraUpVector();
 
             UpdateWritableBitmap();
             Vertices = new Point[ObjectModel.Vertices.Length];
