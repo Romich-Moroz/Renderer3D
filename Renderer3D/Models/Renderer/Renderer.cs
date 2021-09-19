@@ -18,7 +18,6 @@ namespace Renderer3D.Models.Renderer
     public class Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
-        private static readonly Vector3 DefaultUpVector = new Vector3 { X = 0, Y = 1, Z = 0 };
         private Point[] _Vertices { get; set; }
         private WriteableBitmap _bitmap { get; set; }
         private int _width = 800;
@@ -63,12 +62,12 @@ namespace Renderer3D.Models.Renderer
         /// Format of pixels for rendered bitmap
         /// </summary>
         public readonly PixelFormat PixelFormat = PixelFormats.Bgr32;
-        public Vector3 Scale { get; set; } = new Vector3 { X = 1f, Y = 1f, Z = 1f };
+        public Vector3 Scale { get; set; } = Vector3.One;
 
         /// <summary>
         /// Position of the camera itself
         /// </summary>
-        public Vector3 CameraPosition { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
+        public Vector3 CameraPosition { get; set; } = Vector3.One;
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -88,14 +87,14 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 CameraTarget { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 CameraTarget { get; set; } = Vector3.Zero;
 
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set; } = DefaultUpVector;
+        public Vector3 CameraUpVector { get; set; } = Vector3.UnitY;
 
-        public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 Offset { get; set; } = Vector3.Zero;
 
 
         /// <summary>
@@ -132,7 +131,7 @@ namespace Renderer3D.Models.Renderer
         private void UpdateCameraUpVector()
         {
             Vector3 lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
-            Vector3 rightVector = Vector3.Cross(lookVector, DefaultUpVector);
+            Vector3 rightVector = Vector3.Cross(lookVector, Vector3.UnitY);
             CameraUpVector = Vector3.Cross(rightVector, lookVector);
         }
 
@@ -155,21 +154,19 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
+            
             Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
-            Stopwatch.Restart();
-
             _bitmap.Clear();
-            Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
-
             Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
                                     Matrix4x4.CreateRotationX(_ModelRotationX) *
                                     Matrix4x4.CreateRotationY(_ModelRotationY) *
                                     Matrix4x4.CreateTranslation(Offset) *
                                     Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector) *
                                     Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
-
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
-            Debug.WriteLine($"Translation matrix time: {Stopwatch.ElapsedMilliseconds}");
+
+            Stopwatch.Restart();
+            var prevMs = Stopwatch.ElapsedMilliseconds;
 
             Parallel.ForEach(Partitioner.Create(0, ObjectModel.Vertices.Length), Range =>
              {
@@ -188,11 +185,14 @@ namespace Renderer3D.Models.Renderer
                      _Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
                  }
              });
-            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
+            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
+            prevMs = Stopwatch.ElapsedMilliseconds;
 
             _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black);
 
-            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
+            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
+            prevMs = Stopwatch.ElapsedMilliseconds;
+
             Debug.WriteLine("Render ended\n");
             Stopwatch.Stop();
 
@@ -201,12 +201,12 @@ namespace Renderer3D.Models.Renderer
 
         public void RotateCameraX(float angle)
         {
-            RotateCamera(new Vector3 { X = 1, Y = 0, Z = 0 }, angle);
+            RotateCamera(Vector3.UnitX, angle);
         }
 
         public void RotateCameraY(float angle)
         {
-            RotateCamera(new Vector3 { X = 0, Y = 1, Z = 0 }, angle);
+            RotateCamera(Vector3.UnitY, angle);
         }
 
         public void RotateModelX(float angle)
