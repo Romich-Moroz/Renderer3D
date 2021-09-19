@@ -48,6 +48,11 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
+        private static void RasterizeTriangle(Triangle triangle)
+        {
+
+        }
+
         private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle triangle)
         {
             DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X1, triangle.X2);
@@ -57,27 +62,27 @@ namespace Renderer3D.Models.WritableBitmap
 
         private static Triangle[] SplitPolygon(Polygon p, Point[] vertices)
         {
-            var result = new List<Triangle>();
+            List<Triangle> result = new List<Triangle>();
             if (p.Vertices.Length == 3)
             {
-                return new[] 
+                return new[]
                 {
-                    new Triangle 
-                    { 
+                    new Triangle
+                    {
                         X1 = vertices[p.Vertices[0].VertexIndex],
                         X2 = vertices[p.Vertices[0].VertexIndex],
-                        X3 = vertices[p.Vertices[0].VertexIndex] 
-                    } 
+                        X3 = vertices[p.Vertices[0].VertexIndex]
+                    }
                 };
             }
             else
             {
-                for (int i=2; i< p.Vertices.Length;i++)
+                for (int i = 2; i < p.Vertices.Length; i++)
                 {
-                    result.Add(new Triangle 
+                    result.Add(new Triangle
                     {
                         X1 = vertices[p.Vertices[0].VertexIndex],
-                        X2 = vertices[p.Vertices[i-1].VertexIndex],
+                        X2 = vertices[p.Vertices[i - 1].VertexIndex],
                         X3 = vertices[p.Vertices[i].VertexIndex]
                     });
                 }
@@ -88,13 +93,6 @@ namespace Renderer3D.Models.WritableBitmap
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        /// <param name="backBuffer"></param>
-        /// <param name="pixelWidth"></param>
-        /// <param name="pixelHeight"></param>
-        /// <param name="stride"></param>
-        /// <param name="color"></param>
-        /// <param name="p"></param>
-        /// <param name="vertices"></param>
         private static void DrawPolygon(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices)
         {
             for (int i = 0; i < p.Vertices.Length; i++)
@@ -112,10 +110,10 @@ namespace Renderer3D.Models.WritableBitmap
 
         private static void DrawPolygonTriangles(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices)
         {
-            var triangles = SplitPolygon(p,vertices);
-            for (int i=0; i<triangles.Length; i++)
+            Triangle[] triangles = SplitPolygon(p, vertices);
+            for (int i = 0; i < triangles.Length; i++)
             {
-                DrawTriangle(backBuffer,pixelWidth,pixelHeight, stride, color, triangles[i]);
+                DrawTriangle(backBuffer, pixelWidth, pixelHeight, stride, color, triangles[i]);
             }
         }
 

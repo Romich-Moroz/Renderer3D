@@ -126,13 +126,13 @@ namespace Renderer3D.Models.Renderer
                 y += vertices[i].Y;
                 z += vertices[i].Z;
             }
-            return new Vector3 { X = (float)x/vertices.Length, Y = (float)y /vertices.Length, Z = (float)z /vertices.Length };
+            return new Vector3 { X = (float)x / vertices.Length, Y = (float)y / vertices.Length, Z = (float)z / vertices.Length };
         }
 
         private void UpdateCameraUpVector()
         {
-            var lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
-            var rightVector = Vector3.Cross(lookVector, DefaultUpVector);
+            Vector3 lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
+            Vector3 rightVector = Vector3.Cross(lookVector, DefaultUpVector);
             CameraUpVector = Vector3.Cross(rightVector, lookVector);
         }
 
@@ -221,12 +221,18 @@ namespace Renderer3D.Models.Renderer
 
         public void OffsetCamera(Vector3 offset)
         {
-            var look = CameraPosition - CameraTarget;
-            var max = Math.Abs(look.X);
+            Vector3 look = CameraPosition - CameraTarget;
+            float max = Math.Abs(look.X);
             if (max < Math.Abs(look.Y))
+            {
                 max = Math.Abs(look.Y);
+            }
+
             if (max < Math.Abs(look.Z))
+            {
                 max = Math.Abs(look.Z);
+            }
+
             CameraPosition += (look / max) * offset;
         }
     }
