@@ -17,11 +17,6 @@ namespace Renderer3D.Models.WritableBitmap
         [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
         public static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
 
-        public static void DrawLine(this WriteableBitmap bitmap, Point x1, Point x2, Color color)
-        {
-            throw new NotImplementedException();
-        }
-
         public static int ToInt(this Color color)
         {
             return color.R << 16 | color.G << 8 | color.B << 0;
@@ -60,7 +55,7 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        public static void DrawLineDda(this WriteableBitmap bitmap, Point x1, Point x2, Color color)
+        public static void DrawLine(this WriteableBitmap bitmap, Point x1, Point x2, Color color)
         {
             double x2x1 = x2.X - x1.X;
             double y2y1 = x2.Y - x1.Y;
@@ -141,9 +136,6 @@ namespace Renderer3D.Models.WritableBitmap
         {
             try
             {
-                // Reserve the back buffer for updates.
-                bitmap.Lock();
-
                 unsafe
                 {
                     // Compute the pixel's color.
@@ -168,7 +160,7 @@ namespace Renderer3D.Models.WritableBitmap
                                 }
                                 else
                                 {
-                                    x1 = vertices[polygons[i].Vertices[polygons[i].Vertices.Length - 1].VertexIndex];
+                                    x1 = vertices[polygons[i].Vertices[^1].VertexIndex];
                                     x2 = vertices[polygons[i].Vertices[0].VertexIndex];
                                 }
 
@@ -201,6 +193,7 @@ namespace Renderer3D.Models.WritableBitmap
                     });
                 }
 
+                bitmap.Lock();
                 // Specify the area of the bitmap that changed.
                 bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
             }
