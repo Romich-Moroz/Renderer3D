@@ -60,36 +60,6 @@ namespace Renderer3D.Models.WritableBitmap
             DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X3, triangle.X1);
         }
 
-        private static Triangle[] SplitPolygon(Polygon p, Point[] vertices)
-        {
-            List<Triangle> result = new List<Triangle>();
-            if (p.Vertices.Length == 3)
-            {
-                return new[]
-                {
-                    new Triangle
-                    {
-                        X1 = vertices[p.Vertices[0].VertexIndex],
-                        X2 = vertices[p.Vertices[0].VertexIndex],
-                        X3 = vertices[p.Vertices[0].VertexIndex]
-                    }
-                };
-            }
-            else
-            {
-                for (int i = 2; i < p.Vertices.Length; i++)
-                {
-                    result.Add(new Triangle
-                    {
-                        X1 = vertices[p.Vertices[0].VertexIndex],
-                        X2 = vertices[p.Vertices[i - 1].VertexIndex],
-                        X3 = vertices[p.Vertices[i].VertexIndex]
-                    });
-                }
-                return result.ToArray();
-            }
-        }
-
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
@@ -110,10 +80,22 @@ namespace Renderer3D.Models.WritableBitmap
 
         private static void DrawPolygonTriangles(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices)
         {
-            Triangle[] triangles = SplitPolygon(p, vertices);
-            for (int i = 0; i < triangles.Length; i++)
+            for (int i = 0; i < p.TriangleIndexes.Length; i++)
             {
-                DrawTriangle(backBuffer, pixelWidth, pixelHeight, stride, color, triangles[i]);
+                DrawTriangle
+                (
+                    backBuffer,
+                    pixelWidth,
+                    pixelHeight,
+                    stride,
+                    color,
+                    new Triangle 
+                    { 
+                        X1 = vertices[p.TriangleIndexes[i].IndexX1],
+                        X2 = vertices[p.TriangleIndexes[i].IndexX2],
+                        X3 = vertices[p.TriangleIndexes[i].IndexX3] 
+                    }
+                );
             }
         }
 
@@ -154,7 +136,6 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        //INLINED FOR OPTIMIZATION PURPOSES
         public static void DrawPolygons(this WriteableBitmap bitmap, Polygon[] polygons, Point[] vertices, Color color)
         {
             int pixelWidth = bitmap.PixelWidth;

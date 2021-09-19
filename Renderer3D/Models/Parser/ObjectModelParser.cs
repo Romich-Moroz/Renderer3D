@@ -56,6 +56,32 @@ namespace Renderer3D.Models.Parser
                 Z = float.Parse(values[3])
             };
         }
+        private static TriangleIndex[] SplitPolygon(List<PolygonVertex> vertices)
+        {
+            var result = new TriangleIndex[vertices.Count - 2];
+            if (vertices.Count == 3)
+            {
+                result[0] = new TriangleIndex
+                {
+                    IndexX1 = vertices[0].VertexIndex,
+                    IndexX2 = vertices[1].VertexIndex,
+                    IndexX3 = vertices[2].VertexIndex
+                };
+            }
+            else
+            {
+                for (int i = 2; i < vertices.Count; i++)
+                {
+                    result[i - 2] = new TriangleIndex
+                    {
+                        IndexX1 = vertices[0].VertexIndex,
+                        IndexX2 = vertices[i - 1].VertexIndex,
+                        IndexX3 = vertices[i].VertexIndex
+                    };
+                }
+            }
+            return result;
+        }
 
         private static Polygon ParsePolygon(string[] values, int vertexCount)
         {
@@ -91,7 +117,8 @@ namespace Renderer3D.Models.Parser
 
             return new Polygon
             {
-                Vertices = polygonVertices.ToArray()
+                Vertices = polygonVertices.ToArray(),
+                TriangleIndexes = SplitPolygon(polygonVertices)
             };
         }
 

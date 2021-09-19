@@ -9,5 +9,10 @@
         /// Vertices of the polygon
         /// </summary>
         public PolygonVertex[] Vertices;
+
+        /// <summary>
+        /// Contains indexes of vertices for each triangle
+        /// </summary>
+        public TriangleIndex[] TriangleIndexes;
     }
 }
