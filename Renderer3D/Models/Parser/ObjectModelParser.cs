@@ -73,7 +73,7 @@ namespace Renderer3D.Models.Parser
                 int verticeIndex = int.Parse(polygonValues[0]);
                 verticeIndex = verticeIndex > 0 ? verticeIndex - 1 : vertexCount + verticeIndex;
 
-                int normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) : -1;
+                int normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) - 1 : -1;
 
                 int textureIndex = -1;
                 if (polygonValues.Length >= 2)

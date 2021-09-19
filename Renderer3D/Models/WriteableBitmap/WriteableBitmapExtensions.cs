@@ -1,6 +1,7 @@
 ﻿using Renderer3D.Models.Data;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,48 +15,8 @@ namespace Renderer3D.Models.WritableBitmap
     /// </summary>
     public static class WriteableBitmapExtensions
     {
-        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
-        public static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
-
-        public static int ToInt(this Color color)
-        {
-            return color.R << 16 | color.G << 8 | color.B << 0;
-        }
-
-        public static void DrawPixel(this WriteableBitmap bitmap, Point x, Color color)
-        {
-            int column = (int)x.X;
-            int row = (int)x.Y;
-
-            try
-            {
-                // Reserve the back buffer for updates.
-                bitmap.Lock();
-
-                unsafe
-                {
-                    // Get a pointer to the back buffer.
-                    IntPtr pBackBuffer = bitmap.BackBuffer;
-
-                    // Find the address of the pixel to draw.
-                    pBackBuffer += row * bitmap.BackBufferStride;
-                    pBackBuffer += column * 4;
-
-                    // Assign the color data to the pixel.
-                    *((int*)pBackBuffer) = color.ToInt();
-                }
-
-                // Specify the area of the bitmap that changed.
-                bitmap.AddDirtyRect(new Int32Rect(column, row, 1, 1));
-            }
-            finally
-            {
-                // Release the back buffer and make it available for display.
-                bitmap.Unlock();
-            }
-        }
-
-        public static void DrawLine(this WriteableBitmap bitmap, Point x1, Point x2, Color color)
+        private static byte[] _blankBuffer;
+        private static void DrawLine(IntPtr backBuffer, int stride, int pixelWidth, int pixelHeight, Color color, Point x1, Point x2)
         {
             double x2x1 = x2.X - x1.X;
             double y2y1 = x2.Y - x1.Y;
@@ -63,44 +24,108 @@ namespace Renderer3D.Models.WritableBitmap
             double xDelta = x2x1 / l;
             double yDelta = y2y1 / l;
 
-            try
+            int color_data = color.ToInt();
+
+            unsafe
             {
-                // Reserve the back buffer for updates.
-                bitmap.Lock();
-                unsafe
+                for (int i = 0; i < l; i++)
                 {
-                    // Compute the pixel's color.
-                    int color_data = color.ToInt();
-
-                    for (int i = 0; i < l; i++)
+                    double x = x1.X + i * xDelta;
+                    double y = x1.Y + i * yDelta;
+                    if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHeight))
                     {
-                        double x = x1.X + i * xDelta;
-                        double y = x1.Y + i * yDelta;
-                        if ((x >= 0 && y >= 0) && (x < bitmap.PixelWidth && y < bitmap.PixelHeight))
-                        {
-                            // Find the address of the pixel to draw.
-                            IntPtr pBackBuffer = bitmap.BackBuffer + (int)y * bitmap.BackBufferStride + (int)x * 4;
+                        // Find the address of the pixel to draw.
+                        IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
 
-                            // Assign the color data to the pixel.
-                            *((int*)pBackBuffer) = color_data;
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        // Assign the color data to the pixel.
+                        *((int*)pBackBuffer) = color_data;
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
-                // Specify the area of the bitmap that changed.
-                bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
-            }
-            finally
-            {
-                // Release the back buffer and make it available for display.
-                bitmap.Unlock();
             }
         }
 
-        private static byte[] _blankBuffer;
+        private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle triangle)
+        {
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X1, triangle.X2);
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X2, triangle.X3);
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X3, triangle.X1);
+        }
+
+        private static Triangle[] SplitPolygon(Polygon p, Point[] vertices)
+        {
+            var result = new List<Triangle>();
+            if (p.Vertices.Length == 3)
+            {
+                return new[] 
+                {
+                    new Triangle 
+                    { 
+                        X1 = vertices[p.Vertices[0].VertexIndex],
+                        X2 = vertices[p.Vertices[0].VertexIndex],
+                        X3 = vertices[p.Vertices[0].VertexIndex] 
+                    } 
+                };
+            }
+            else
+            {
+                for (int i=2; i< p.Vertices.Length;i++)
+                {
+                    result.Add(new Triangle 
+                    {
+                        X1 = vertices[p.Vertices[0].VertexIndex],
+                        X2 = vertices[p.Vertices[i-1].VertexIndex],
+                        X3 = vertices[p.Vertices[i].VertexIndex]
+                    });
+                }
+                return result.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Draws polygon without triangulation
+        /// </summary>
+        /// <param name="backBuffer"></param>
+        /// <param name="pixelWidth"></param>
+        /// <param name="pixelHeight"></param>
+        /// <param name="stride"></param>
+        /// <param name="color"></param>
+        /// <param name="p"></param>
+        /// <param name="vertices"></param>
+        private static void DrawPolygon(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices)
+        {
+            for (int i = 0; i < p.Vertices.Length; i++)
+            {
+                if (i < p.Vertices.Length - 1)
+                {
+                    DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[i].VertexIndex], vertices[p.Vertices[i + 1].VertexIndex]);
+                }
+                else
+                {
+                    DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[^1].VertexIndex], vertices[p.Vertices[0].VertexIndex]);
+                }
+            }
+        }
+
+        private static void DrawPolygonTriangles(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices)
+        {
+            var triangles = SplitPolygon(p,vertices);
+            for (int i=0; i<triangles.Length; i++)
+            {
+                DrawTriangle(backBuffer,pixelWidth,pixelHeight, stride, color, triangles[i]);
+            }
+        }
+
+        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
+        public static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
+
+        public static int ToInt(this Color color)
+        {
+            return color.R << 16 | color.G << 8 | color.B << 0;
+        }
 
         public static void Clear(this WriteableBitmap bitmap)
         {
@@ -134,67 +159,21 @@ namespace Renderer3D.Models.WritableBitmap
         //INLINED FOR OPTIMIZATION PURPOSES
         public static void DrawPolygons(this WriteableBitmap bitmap, Polygon[] polygons, Point[] vertices, Color color)
         {
+            int pixelWidth = bitmap.PixelWidth;
+            int pixelHeight = bitmap.PixelHeight;
+            IntPtr backBuffer = bitmap.BackBuffer;
+            int stride = bitmap.BackBufferStride;
+
             try
             {
-                unsafe
+                Parallel.ForEach(Partitioner.Create(0, polygons.Length), Range =>
                 {
-                    // Compute the pixel's color.
-                    int color_data = color.ToInt();
-                    int pixelWidth = bitmap.PixelWidth;
-                    int pixelHight = bitmap.PixelHeight;
-                    IntPtr backBuffer = bitmap.BackBuffer;
-                    int stride = bitmap.BackBufferStride;
-
-                    Parallel.ForEach(Partitioner.Create(0, polygons.Length), Range =>
+                    for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        for (int i = Range.Item1; i < Range.Item2; i++)
-                        {
-                            for (int j = 0; j < polygons[i].Vertices.Length; j++)
-                            {
-                                Point x1;
-                                Point x2;
-                                if (j < polygons[i].Vertices.Length - 1)
-                                {
-                                    x1 = vertices[polygons[i].Vertices[j].VertexIndex];
-                                    x2 = vertices[polygons[i].Vertices[j + 1].VertexIndex];
-                                }
-                                else
-                                {
-                                    x1 = vertices[polygons[i].Vertices[^1].VertexIndex];
-                                    x2 = vertices[polygons[i].Vertices[0].VertexIndex];
-                                }
-
-                                double x2x1 = x2.X - x1.X;
-                                double y2y1 = x2.Y - x1.Y;
-                                double l = Math.Abs(x2x1) > Math.Abs(y2y1) ? Math.Abs(x2x1) : Math.Abs(y2y1);
-                                double xDelta = x2x1 / l;
-                                double yDelta = y2y1 / l;
-
-                                for (int k = 0; k < l; k++)
-                                {
-                                    double x = x1.X + k * xDelta;
-                                    double y = x1.Y + k * yDelta;
-                                    if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHight))
-                                    {
-                                        // Find the address of the pixel to draw.
-                                        IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
-
-                                        // Assign the color data to the pixel.
-                                        *((int*)pBackBuffer) = color_data;
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                    });
-                }
-
+                        DrawPolygonTriangles(backBuffer, pixelWidth, pixelHeight, stride, color, polygons[i], vertices);
+                    }
+                });
                 bitmap.Lock();
-                // Specify the area of the bitmap that changed.
                 bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
             }
             finally
