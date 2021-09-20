@@ -18,7 +18,7 @@ namespace Renderer3D.Models.Renderer
     public class Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
-        private Point[] _Vertices { get; set; }
+        private Vector3[] _Vertices { get; set; }
         private WriteableBitmap _bitmap { get; set; }
         private int _width = 800;
         private float _ModelRotationX = 0;
@@ -95,6 +95,7 @@ namespace Renderer3D.Models.Renderer
         public Vector3 CameraUpVector { get; set; } = Vector3.UnitY;
 
         public Vector3 Offset { get; set; } = Vector3.Zero;
+        public bool TriangleMode { get; set; } = false;
 
 
         /// <summary>
@@ -143,7 +144,7 @@ namespace Renderer3D.Models.Renderer
             UpdateCameraUpVector();
 
             UpdateWritableBitmap();
-            _Vertices = new Point[ObjectModel.Vertices.Length];
+            _Vertices = new Vector3[ObjectModel.Vertices.Length];
         }
 
 
@@ -182,13 +183,13 @@ namespace Renderer3D.Models.Renderer
                          viewportMatrix
                      );
 
-                     _Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                     _Vertices[i] = new Vector3(portVert.X,portVert.Y,portVert.Z);
                  }
              });
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black);
+            _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

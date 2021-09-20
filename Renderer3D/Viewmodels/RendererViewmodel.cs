@@ -35,8 +35,9 @@ namespace Renderer3D.Viewmodels
         {
             //Init renderer (for test purposes change your model name here)
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
+            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Debug/debug.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/Klesk/klesk.obj");
-            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
+            //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Head/head.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/King/king.obj");
             Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
@@ -95,7 +96,7 @@ namespace Renderer3D.Viewmodels
 
             KeyDownCommand = new RelayCommand<KeyEventArgs>((args) =>
             {
-                bool moveKeyPressed = args.Key == Key.A || args.Key == Key.W || args.Key == Key.S || args.Key == Key.D || args.Key == Key.Q || args.Key == Key.E;
+                bool moveKeyPressed = args.Key == Key.A || args.Key == Key.W || args.Key == Key.S || args.Key == Key.D || args.Key == Key.Q || args.Key == Key.E || args.Key == Key.T;
                 if (args.Key == Key.A)
                 {
                     Renderer.Offset += new Vector3 { X = -1, Y = 0, Z = 0 } * MoveStep;
@@ -124,6 +125,11 @@ namespace Renderer3D.Viewmodels
                 if (args.Key == Key.E)
                 {
                     Renderer.Offset += new Vector3 { X = 0, Y = 0, Z = -1 } * MoveStep;
+                }
+
+                if (args.Key == Key.T)
+                {
+                    Renderer.TriangleMode ^= true;
                 }
 
                 if (moveKeyPressed)

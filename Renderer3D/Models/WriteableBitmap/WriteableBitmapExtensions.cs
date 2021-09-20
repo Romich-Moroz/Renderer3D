@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -48,71 +49,119 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
+        private static Point ToPoint(this Vector3 v) => new Point(v.X,v.Y);
 
-        private static Point GetInsersectionPoint(Point A, Point B, Point C, Point D)
+        private static float Clamp(float value, float min = 0, float max = 1)
         {
-            // Line AB represented as a1x + b1y = c1
-            double a = B.Y - A.Y;
-            double b = A.X - B.X;
-            double c = a * (A.X) + b * (A.Y);
-            // Line CD represented as a2x + b2y = c2
-            double a1 = D.Y - C.Y;
-            double b1 = C.X - D.X;
-            double c1 = a1 * (C.X) + b1 * (C.Y);
-            double det = a * b1 - a1 * b;
-            if (det == 0)
+            return Math.Max(min, Math.Min(value, max));
+        }
+
+        // Interpolating the value between 2 vertices 
+        // min is the starting point, max the ending point
+        // and gradient the % between the 2 points
+        private static float Interpolate(float min, float max, float gradient)
+        {
+            return min + (max - min) * Clamp(gradient);
+        }
+
+        // drawing line between 2 points from left to right
+        // papb -> pcpd
+        // pa, pb, pc, pd must then be sorted before
+        private static void ProcessScanLine(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd)
+        {
+            // Thanks to current Y, we can compute the gradient to compute others values like
+            // the starting X (sx) and ending X (ex) to draw between
+            // if pa.Y == pb.Y or pc.Y == pd.Y, gradient is forced to 1
+            var gradient1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1;
+            var gradient2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1;
+
+            int sx = (int)Interpolate(pa.X, pb.X, gradient1);
+            int ex = (int)Interpolate(pc.X, pd.X, gradient2);
+
+            DrawLine(backBuffer,stride,pixelWidth,pixelHeight,color,new Point(sx,y),new Point(ex-1,y));
+        }
+
+        private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle t)
+        {
+
+            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y) return; // i dont care about degenerate triangles
+
+            if (t.p1.Y > t.p2.Y) (t.p1, t.p2) = (t.p2, t.p1);
+            if (t.p1.Y > t.p3.Y) (t.p1, t.p3) = (t.p3, t.p1);
+            if (t.p2.Y > t.p3.Y) (t.p2, t.p3) = (t.p3, t.p2);
+
+            double dP1P2, dP1P3;
+
+            if (t.p2.Y - t.p1.Y > 0)
+                dP1P2 = (t.p2.X - t.p1.X) / (t.p2.Y - t.p1.Y);
+            else
+                dP1P2 = 0;
+
+            if (t.p3.Y - t.p1.Y > 0)
+                dP1P3 = (t.p3.X - t.p1.X) / (t.p3.Y - t.p1.Y);
+            else
+                dP1P3 = 0;
+
+            // First case where triangles are like that:
+            // P1
+            // -
+            // -- 
+            // - -
+            // -  -
+            // -   - P2
+            // -  -
+            // - -
+            // -
+            // P3
+            if (dP1P2 > dP1P3)
             {
-                return new Point(float.MaxValue, float.MaxValue);
+                for (var y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
+                {
+                    if (y < t.p2.Y)
+                    {
+                        ProcessScanLine(backBuffer,pixelWidth,pixelHeight,stride,Colors.Gray,y, t.p1, t.p3, t.p1, t.p2);
+                    }
+                    else
+                    {
+                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, t.p3, t.p2, t.p3);
+                    }
+                }
             }
+            // First case where triangles are like that:
+            //       P1
+            //        -
+            //       -- 
+            //      - -
+            //     -  -
+            // P2 -   - 
+            //     -  -
+            //      - -
+            //        -
+            //       P3
             else
             {
-                double x = (b1 * c - b * c1) / det;
-                double y = (a * c1 - a1 * c) / det;
-                return new Point(x, y);
-            }
-        }
-
-        private static void RasterizeTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle tr)
-        {
-            var xMax = (int)Math.Max(Math.Max(tr.X1.X, tr.X2.X), tr.X3.X);
-            var yMax = (int)Math.Max(Math.Max(tr.X1.Y, tr.X2.Y), tr.X3.Y);
-
-            var xMin = (int)Math.Min(Math.Min(tr.X1.X, tr.X2.X), tr.X3.X);
-            var yMin = (int)Math.Min(Math.Min(tr.X1.Y, tr.X2.Y), tr.X3.Y);            
-
-            var max = tr.X1.Y == yMax ? tr.X1 : tr.X2.Y == yMax ? tr.X2 : tr.X3;
-            var min = tr.X1.Y == yMin ? tr.X1 : tr.X2.Y == yMin ? tr.X2 : tr.X3;
-            var middle = tr.X1 != max && tr.X1 != min ? tr.X1 : tr.X2 != max && tr.X2 != min ? tr.X2 : tr.X3;
-
-            for (int y=yMax;y>=yMin;y--)
-            {
-                if ((xMin >= 0 && y >= 0) && (xMax < pixelWidth && y < pixelHeight))
+                for (var y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
                 {
-                    var x1 = new Point { X = xMin, Y = y };
-                    var x2 = new Point { X = xMax, Y = y };
-                    var p1 = GetInsersectionPoint(x1, x2, min, max);
-                    var p2 = GetInsersectionPoint(x1, x2, middle, max);
-                    DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, p1, p2);
+                    if (y < t.p2.Y)
+                    {
+                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, t.p2, t.p1, t.p3);
+                    }
+                    else
+                    {
+                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p2, t.p3, t.p1, t.p3);
+                    }
                 }
-                else
-                {
-                    break;
-                }               
             }
-        }
 
-        private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle triangle)
-        {
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X1, triangle.X2);
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X2, triangle.X3);
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, triangle.X3, triangle.X1);
-            //RasterizeTriangle(backBuffer, stride, pixelWidth, pixelHeight, Colors.Gray, triangle);
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p1.ToPoint(), t.p2.ToPoint());
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p2.ToPoint(), t.p3.ToPoint());
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p3.ToPoint(), t.p1.ToPoint());
         }
 
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        private static void DrawPolygon(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Point[] vertices, bool drawTriangles = false)
+        private static void DrawPolygon(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Vector3[] vertices, bool drawTriangles = false)
         {
             if (drawTriangles)
             {
@@ -127,9 +176,9 @@ namespace Renderer3D.Models.WritableBitmap
                         color,
                         new Triangle
                         {
-                            X1 = vertices[p.TriangleIndexes[i].IndexX1],
-                            X2 = vertices[p.TriangleIndexes[i].IndexX2],
-                            X3 = vertices[p.TriangleIndexes[i].IndexX3]
+                            p1 = vertices[p.TriangleIndexes[i].IndexX1],
+                            p2 = vertices[p.TriangleIndexes[i].IndexX2],
+                            p3 = vertices[p.TriangleIndexes[i].IndexX3]
                         }
                     );
                 }
@@ -140,11 +189,11 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     if (i < p.Vertices.Length - 1)
                     {
-                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[i].VertexIndex], vertices[p.Vertices[i + 1].VertexIndex]);
+                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[i].VertexIndex].ToPoint(), vertices[p.Vertices[i + 1].VertexIndex].ToPoint());
                     }
                     else
                     {
-                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[^1].VertexIndex], vertices[p.Vertices[0].VertexIndex]);
+                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[^1].VertexIndex].ToPoint(), vertices[p.Vertices[0].VertexIndex].ToPoint());
                     }
                 }
             }
@@ -187,7 +236,7 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        public static void DrawPolygons(this WriteableBitmap bitmap, Polygon[] polygons, Point[] vertices, Color color)
+        public static void DrawPolygons(this WriteableBitmap bitmap, Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles)
         {
             int pixelWidth = bitmap.PixelWidth;
             int pixelHeight = bitmap.PixelHeight;
@@ -200,7 +249,7 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        DrawPolygon(backBuffer, pixelWidth, pixelHeight, stride, color, polygons[i], vertices, true);
+                        DrawPolygon(backBuffer, pixelWidth, pixelHeight, stride, color, polygons[i], vertices, drawTriangles);
                     }
                 });
                 bitmap.Lock();
