@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System.Windows;
 
 namespace Renderer3D.Models.Data
 {

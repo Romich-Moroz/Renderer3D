@@ -1,7 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -49,7 +48,10 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        private static Point ToPoint(this Vector3 v) => new Point(v.X,v.Y);
+        private static Point ToPoint(this Vector3 v)
+        {
+            return new Point(v.X, v.Y);
+        }
 
         private static float Clamp(float value, float min = 0, float max = 1)
         {
@@ -72,84 +74,66 @@ namespace Renderer3D.Models.WritableBitmap
             // Thanks to current Y, we can compute the gradient to compute others values like
             // the starting X (sx) and ending X (ex) to draw between
             // if pa.Y == pb.Y or pc.Y == pd.Y, gradient is forced to 1
-            var gradient1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1;
-            var gradient2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1;
+            float gradient1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1;
+            float gradient2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1;
 
             int sx = (int)Interpolate(pa.X, pb.X, gradient1);
             int ex = (int)Interpolate(pc.X, pd.X, gradient2);
 
-            DrawLine(backBuffer,stride,pixelWidth,pixelHeight,color,new Point(sx,y),new Point(ex-1,y));
+            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, new Point(sx, y), new Point(ex, y));
         }
 
         private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle t)
         {
 
-            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y) return; // i dont care about degenerate triangles
+            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y)
+            {
+                return; // i dont care about degenerate triangles
+            }
 
-            if (t.p1.Y > t.p2.Y) (t.p1, t.p2) = (t.p2, t.p1);
-            if (t.p1.Y > t.p3.Y) (t.p1, t.p3) = (t.p3, t.p1);
-            if (t.p2.Y > t.p3.Y) (t.p2, t.p3) = (t.p3, t.p2);
+            if (t.p1.Y > t.p2.Y)
+            {
+                (t.p1, t.p2) = (t.p2, t.p1);
+            }
+
+            if (t.p1.Y > t.p3.Y)
+            {
+                (t.p1, t.p3) = (t.p3, t.p1);
+            }
+
+            if (t.p2.Y > t.p3.Y)
+            {
+                (t.p2, t.p3) = (t.p3, t.p2);
+            }
 
             double dP1P2, dP1P3;
-
             if (t.p2.Y - t.p1.Y > 0)
+            {
                 dP1P2 = (t.p2.X - t.p1.X) / (t.p2.Y - t.p1.Y);
+            }
             else
+            {
                 dP1P2 = 0;
+            }
 
             if (t.p3.Y - t.p1.Y > 0)
+            {
                 dP1P3 = (t.p3.X - t.p1.X) / (t.p3.Y - t.p1.Y);
-            else
-                dP1P3 = 0;
-
-            // First case where triangles are like that:
-            // P1
-            // -
-            // -- 
-            // - -
-            // -  -
-            // -   - P2
-            // -  -
-            // - -
-            // -
-            // P3
-            if (dP1P2 > dP1P3)
-            {
-                for (var y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
-                {
-                    if (y < t.p2.Y)
-                    {
-                        ProcessScanLine(backBuffer,pixelWidth,pixelHeight,stride,Colors.Gray,y, t.p1, t.p3, t.p1, t.p2);
-                    }
-                    else
-                    {
-                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, t.p3, t.p2, t.p3);
-                    }
-                }
             }
-            // First case where triangles are like that:
-            //       P1
-            //        -
-            //       -- 
-            //      - -
-            //     -  -
-            // P2 -   - 
-            //     -  -
-            //      - -
-            //        -
-            //       P3
             else
             {
-                for (var y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
+                dP1P3 = 0;
+            }
+
+            for (int y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
+            {
+                if (y < t.p2.Y)
                 {
-                    if (y < t.p2.Y)
-                    {
-                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, t.p2, t.p1, t.p3);
-                    }
-                    else
-                    {
-                        ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p2, t.p3, t.p1, t.p3);
-                    }
+                    ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3);
+                }
+                else
+                {
+                    ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3);
                 }
             }
 

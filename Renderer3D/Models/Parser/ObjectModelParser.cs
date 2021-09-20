@@ -58,7 +58,7 @@ namespace Renderer3D.Models.Parser
         }
         private static TriangleIndex[] SplitPolygon(List<PolygonVertex> vertices)
         {
-            var result = new TriangleIndex[vertices.Count - 2];
+            TriangleIndex[] result = new TriangleIndex[vertices.Count - 2];
             if (vertices.Count == 3)
             {
                 result[0] = new TriangleIndex

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Renderer3D.Models.Data
+﻿namespace Renderer3D.Models.Data
 {
     public struct TriangleIndex
     {

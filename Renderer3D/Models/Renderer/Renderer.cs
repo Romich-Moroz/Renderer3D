@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -155,7 +154,7 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
-            
+
             Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
             _bitmap.Clear();
             Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
@@ -167,7 +166,7 @@ namespace Renderer3D.Models.Renderer
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
 
             Stopwatch.Restart();
-            var prevMs = Stopwatch.ElapsedMilliseconds;
+            long prevMs = Stopwatch.ElapsedMilliseconds;
 
             Parallel.ForEach(Partitioner.Create(0, ObjectModel.Vertices.Length), Range =>
              {
@@ -183,7 +182,7 @@ namespace Renderer3D.Models.Renderer
                          viewportMatrix
                      );
 
-                     _Vertices[i] = new Vector3(portVert.X,portVert.Y,portVert.Z);
+                     _Vertices[i] = new Vector3(portVert.X, portVert.Y, portVert.Z);
                  }
              });
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
