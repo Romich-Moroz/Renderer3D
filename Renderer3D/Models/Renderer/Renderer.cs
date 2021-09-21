@@ -17,8 +17,8 @@ namespace Renderer3D.Models.Renderer
     public class Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
+        private readonly WritableBitmapWriter writer = new WritableBitmapWriter();
         private Vector3[] _Vertices { get; set; }
-        private WriteableBitmap _bitmap { get; set; }
         private int _width = 800;
         private float _ModelRotationX = 0;
         private float _ModelRotationY = 0;
@@ -104,8 +104,8 @@ namespace Renderer3D.Models.Renderer
 
         private void UpdateWritableBitmap()
         {
-            _bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride));
-            _bitmap.Clear();
+            writer.Bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride)); ;
+            writer.Clear();
         }
 
         private void RotateCamera(Vector3 axis, float angle)
@@ -156,7 +156,7 @@ namespace Renderer3D.Models.Renderer
         {
 
             Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
-            _bitmap.Clear();
+            writer.Clear();
             Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
                                     Matrix4x4.CreateRotationX(_ModelRotationX) *
                                     Matrix4x4.CreateRotationY(_ModelRotationY) *
@@ -188,7 +188,7 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode);
+            writer.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
@@ -196,7 +196,7 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine("Render ended\n");
             Stopwatch.Stop();
 
-            return _bitmap;
+            return writer.Bitmap;
         }
 
         public void RotateCameraX(float angle)

@@ -1,4 +1,5 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Numerics;
@@ -13,12 +14,36 @@ namespace Renderer3D.Models.WritableBitmap
     /// <summary>
     /// Drawing extensions for writeable bitmap
     /// </summary>
-    public static class WriteableBitmapExtensions
+    public class WritableBitmapWriter
     {
         private static byte[] _blankBuffer;
-        private static float[] _depthBuffer;
+        private const int lineColor = 0;
+        private readonly int rastColor = Colors.Gray.ToInt();
+        private WriteableBitmap _bitmap;
 
-        private static void DrawLine(IntPtr backBuffer, int stride, int pixelWidth, int pixelHeight, Color color, Point x1, Point x2)
+        private float[] _depthBuffer;
+        private IntPtr backBuffer;
+        private int stride;
+        private int pixelWidth;
+        private int pixelHeight;
+        public WriteableBitmap Bitmap
+        {
+            get => _bitmap;
+            set
+            {
+                int bitmapLength = value.PixelWidth * value.PixelHeight * 4;
+
+                pixelWidth = value.PixelWidth;
+                pixelHeight = value.PixelHeight;
+                backBuffer = value.BackBuffer;
+                stride = value.BackBufferStride;
+                _blankBuffer = new byte[bitmapLength];
+                _depthBuffer = new float[value.PixelWidth * value.PixelHeight];
+                _bitmap = value;
+            }
+        }
+
+        private void DrawLine(Point x1, Point x2, Color color)
         {
             double x2x1 = x2.X - x1.X;
             double y2y1 = x2.Y - x1.Y;
@@ -50,16 +75,6 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        private static void DrawPoint(IntPtr backBuffer, int stride, int pixelWidth, int pixelHeight, Color color, Vector3 point)
-        {
-            
-        }
-
-        private static Point ToPoint(this Vector3 v)
-        {
-            return new Point(v.X, v.Y);
-        }
-
         private static float Clamp(float value, float min = 0, float max = 1)
         {
             return Math.Max(min, Math.Min(value, max));
@@ -76,7 +91,7 @@ namespace Renderer3D.Models.WritableBitmap
         // drawing line between 2 points from left to right
         // papb -> pcpd
         // pa, pb, pc, pd must then be sorted before
-        private static void ProcessScanLine(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd)
+        private void ProcessScanLine(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, Color color)
         {
             // Thanks to current Y, we can compute the gradient to compute others values like
             // the starting X (sx) and ending X (ex) to draw between
@@ -90,18 +105,17 @@ namespace Renderer3D.Models.WritableBitmap
             float z1 = Interpolate(pa.Z, pb.Z, gradient1);
             float z2 = Interpolate(pc.Z, pd.Z, gradient2);
             // starting Z & ending Z
-            for (var x = sx; x < ex; x++)
+            int color_data = color.ToInt();
+            for (int x = sx; x < ex; x++)
             {
                 float gradient = (x - sx) / (float)(ex - sx);
 
-                var z = Interpolate(z1, z2, gradient);
+                float z = Interpolate(z1, z2, gradient);
 
                 if (x >= 0 && y >= 0 && x < pixelWidth && y < pixelHeight)
                 {
-                    IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
-                    var index = ((int)x + (int)y * pixelWidth);
-                    var index4 = index * 4;
-                    int color_data = color.ToInt();
+                    IntPtr pBackBuffer = backBuffer + y * stride + x * 4;
+                    int index = (x + y * pixelWidth);
 
                     if (_depthBuffer[index] < z)
                     {
@@ -117,7 +131,7 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle t)
+        private void DrawTriangle(Triangle t, Color color)
         {
 
             if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y)
@@ -163,11 +177,11 @@ namespace Renderer3D.Models.WritableBitmap
             {
                 if (y < t.p2.Y)
                 {
-                    ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3);
+                    ProcessScanLine(y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3, Colors.Gray);
                 }
                 else
                 {
-                    ProcessScanLine(backBuffer, pixelWidth, pixelHeight, stride, Colors.Gray, y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3);
+                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3, Colors.Gray);
                 }
             }
 
@@ -179,13 +193,13 @@ namespace Renderer3D.Models.WritableBitmap
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        private static void DrawPolygon(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Polygon p, Vector3[] vertices, bool drawTriangles = false)
+        private void DrawPolygon(Polygon p, Vector3[] vertices, Color color, bool drawTriangles = false)
         {
             if (drawTriangles)
             {
                 for (int i = 0; i < p.TriangleIndexes.Length; i++)
                 {
-                    var triangle = new Triangle
+                    Triangle triangle = new Triangle
                     {
                         p1 = vertices[p.TriangleIndexes[i].IndexX1],
                         p2 = vertices[p.TriangleIndexes[i].IndexX2],
@@ -193,12 +207,8 @@ namespace Renderer3D.Models.WritableBitmap
                     };
                     DrawTriangle
                     (
-                        backBuffer,
-                        pixelWidth,
-                        pixelHeight,
-                        stride,
-                        color,
-                        triangle
+                        triangle,
+                        color
                     );
                 }
             }
@@ -208,11 +218,11 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     if (i < p.Vertices.Length - 1)
                     {
-                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[i].VertexIndex].ToPoint(), vertices[p.Vertices[i + 1].VertexIndex].ToPoint());
+                        DrawLine(vertices[p.Vertices[i].VertexIndex].ToPoint(), vertices[p.Vertices[i + 1].VertexIndex].ToPoint(), color);
                     }
                     else
                     {
-                        DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, vertices[p.Vertices[^1].VertexIndex].ToPoint(), vertices[p.Vertices[0].VertexIndex].ToPoint());
+                        DrawLine(vertices[p.Vertices[^1].VertexIndex].ToPoint(), vertices[p.Vertices[0].VertexIndex].ToPoint(), color);
                     }
                 }
             }
@@ -221,20 +231,8 @@ namespace Renderer3D.Models.WritableBitmap
         [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
         public static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
 
-        public static int ToInt(this Color color)
+        public void Clear()
         {
-            return color.R << 16 | color.G << 8 | color.B << 0;
-        }
-
-        public static void Clear(this WriteableBitmap bitmap)
-        {
-            int bitmapLength = bitmap.PixelWidth * bitmap.PixelHeight * 4;
-            if (_blankBuffer == null || _blankBuffer.Length != bitmapLength)
-            {
-                _blankBuffer = new byte[bitmapLength];
-                _depthBuffer = new float[bitmap.PixelWidth * bitmap.PixelHeight];
-            }
-
             for (int i = 0; i < _depthBuffer.Length; i++)
             {
                 _depthBuffer[i] = float.MaxValue;
@@ -248,42 +246,37 @@ namespace Renderer3D.Models.WritableBitmap
                     fixed (byte* b = _blankBuffer)
                     {
                         System.Runtime.CompilerServices.Unsafe.InitBlock(b, 255, (uint)_blankBuffer.Length);
-                        CopyMemory(bitmap.BackBuffer, (IntPtr)b, (uint)_blankBuffer.Length);
+                        CopyMemory(Bitmap.BackBuffer, (IntPtr)b, (uint)_blankBuffer.Length);
                     }
                 }
 
-                bitmap.Lock();
-                bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
+                Bitmap.Lock();
+                Bitmap.AddDirtyRect(new Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight));
             }
             finally
             {
-                bitmap.Unlock();
+                Bitmap.Unlock();
             }
         }
 
-        public static void DrawPolygons(this WriteableBitmap bitmap, Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles)
+        public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles)
         {
-            int pixelWidth = bitmap.PixelWidth;
-            int pixelHeight = bitmap.PixelHeight;
-            IntPtr backBuffer = bitmap.BackBuffer;
-            int stride = bitmap.BackBufferStride;
-
             try
             {
                 Parallel.ForEach(Partitioner.Create(0, polygons.Length), Range =>
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        DrawPolygon(backBuffer, pixelWidth, pixelHeight, stride, color, polygons[i], vertices, drawTriangles);
+                        DrawPolygon(polygons[i], vertices, color, drawTriangles);
                     }
                 });
-                bitmap.Lock();
-                bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
+                Bitmap.Lock();
+                Bitmap.AddDirtyRect(new Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight));
             }
             finally
             {
                 // Release the back buffer and make it available for display.
-                bitmap.Unlock();
+                Bitmap.Unlock();
             }
         }
 
