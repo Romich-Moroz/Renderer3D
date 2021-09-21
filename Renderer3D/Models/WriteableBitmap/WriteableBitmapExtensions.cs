@@ -16,6 +16,8 @@ namespace Renderer3D.Models.WritableBitmap
     public static class WriteableBitmapExtensions
     {
         private static byte[] _blankBuffer;
+        private static float[] _depthBuffer;
+
         private static void DrawLine(IntPtr backBuffer, int stride, int pixelWidth, int pixelHeight, Color color, Point x1, Point x2)
         {
             double x2x1 = x2.X - x1.X;
@@ -46,6 +48,11 @@ namespace Renderer3D.Models.WritableBitmap
                     }
                 }
             }
+        }
+
+        private static void DrawPoint(IntPtr backBuffer, int stride, int pixelWidth, int pixelHeight, Color color, Vector3 point)
+        {
+            
         }
 
         private static Point ToPoint(this Vector3 v)
@@ -80,7 +87,34 @@ namespace Renderer3D.Models.WritableBitmap
             int sx = (int)Interpolate(pa.X, pb.X, gradient1);
             int ex = (int)Interpolate(pc.X, pd.X, gradient2);
 
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, new Point(sx, y), new Point(ex, y));
+            float z1 = Interpolate(pa.Z, pb.Z, gradient1);
+            float z2 = Interpolate(pc.Z, pd.Z, gradient2);
+            // starting Z & ending Z
+            for (var x = sx; x < ex; x++)
+            {
+                float gradient = (x - sx) / (float)(ex - sx);
+
+                var z = Interpolate(z1, z2, gradient);
+
+                if (x >= 0 && y >= 0 && x < pixelWidth && y < pixelHeight)
+                {
+                    IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
+                    var index = ((int)x + (int)y * pixelWidth);
+                    var index4 = index * 4;
+                    int color_data = color.ToInt();
+
+                    if (_depthBuffer[index] < z)
+                    {
+                        return; // Discard
+                    }
+                    _depthBuffer[index] = z;
+
+                    unsafe
+                    {
+                        *((int*)pBackBuffer) = color_data;
+                    }
+                }
+            }
         }
 
         private static void DrawTriangle(IntPtr backBuffer, int pixelWidth, int pixelHeight, int stride, Color color, Triangle t)
@@ -137,9 +171,9 @@ namespace Renderer3D.Models.WritableBitmap
                 }
             }
 
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p1.ToPoint(), t.p2.ToPoint());
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p2.ToPoint(), t.p3.ToPoint());
-            DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p3.ToPoint(), t.p1.ToPoint());
+            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p1.ToPoint(), t.p2.ToPoint());
+            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p2.ToPoint(), t.p3.ToPoint());
+            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p3.ToPoint(), t.p1.ToPoint());
         }
 
         /// <summary>
@@ -151,6 +185,12 @@ namespace Renderer3D.Models.WritableBitmap
             {
                 for (int i = 0; i < p.TriangleIndexes.Length; i++)
                 {
+                    var triangle = new Triangle
+                    {
+                        p1 = vertices[p.TriangleIndexes[i].IndexX1],
+                        p2 = vertices[p.TriangleIndexes[i].IndexX2],
+                        p3 = vertices[p.TriangleIndexes[i].IndexX3]
+                    };
                     DrawTriangle
                     (
                         backBuffer,
@@ -158,12 +198,7 @@ namespace Renderer3D.Models.WritableBitmap
                         pixelHeight,
                         stride,
                         color,
-                        new Triangle
-                        {
-                            p1 = vertices[p.TriangleIndexes[i].IndexX1],
-                            p2 = vertices[p.TriangleIndexes[i].IndexX2],
-                            p3 = vertices[p.TriangleIndexes[i].IndexX3]
-                        }
+                        triangle
                     );
                 }
             }
@@ -197,6 +232,12 @@ namespace Renderer3D.Models.WritableBitmap
             if (_blankBuffer == null || _blankBuffer.Length != bitmapLength)
             {
                 _blankBuffer = new byte[bitmapLength];
+                _depthBuffer = new float[bitmap.PixelWidth * bitmap.PixelHeight];
+            }
+
+            for (int i = 0; i < _depthBuffer.Length; i++)
+            {
+                _depthBuffer[i] = float.MaxValue;
             }
 
             try

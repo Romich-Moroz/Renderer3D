@@ -34,8 +34,8 @@ namespace Renderer3D.Viewmodels
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
         {
             //Init renderer (for test purposes change your model name here)
-            //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
-            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Debug/debug.obj");
+            ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
+            //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Debug/debug.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/Klesk/klesk.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
             //ObjectModel objectModel = ObjectModelParser.Parse("../../../RenderModels/Head/head.obj");
