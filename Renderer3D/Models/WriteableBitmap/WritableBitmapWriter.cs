@@ -131,10 +131,9 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        private void DrawTriangle(Triangle t, Color color)
+        private void DrawTriangle(Triangle t, Vector3 lookVector, Color color)
         {
-
-            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y)
+            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y || Vector3.Dot(Vector3.Cross(t.p2 - t.p1, t.p3 - t.p1), lookVector) < 0)
             {
                 return; // i dont care about degenerate triangles
             }
@@ -177,11 +176,11 @@ namespace Renderer3D.Models.WritableBitmap
             {
                 if (y < t.p2.Y)
                 {
-                    ProcessScanLine(y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3, Colors.Gray);
+                    ProcessScanLine(y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3, color);
                 }
                 else
                 {
-                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3, Colors.Gray);
+                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3, color);
                 }
             }
 
@@ -193,7 +192,7 @@ namespace Renderer3D.Models.WritableBitmap
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        private void DrawPolygon(Polygon p, Vector3[] vertices, Color color, bool drawTriangles = false)
+        private void DrawPolygon(Polygon p, Vector3[] vertices, Color color, bool drawTriangles, Vector3 lookVector)
         {
             if (drawTriangles)
             {
@@ -205,11 +204,7 @@ namespace Renderer3D.Models.WritableBitmap
                         p2 = vertices[p.TriangleIndexes[i].IndexX2],
                         p3 = vertices[p.TriangleIndexes[i].IndexX3]
                     };
-                    DrawTriangle
-                    (
-                        triangle,
-                        color
-                    );
+                    DrawTriangle(triangle, lookVector, color);
                 }
             }
             else
@@ -259,7 +254,7 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles)
+        public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles, Vector3 lookVector)
         {
             try
             {
@@ -267,7 +262,7 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        DrawPolygon(polygons[i], vertices, color, drawTriangles);
+                        DrawPolygon(polygons[i], vertices, color, drawTriangles, lookVector);
                     }
                 });
                 Bitmap.Lock();
