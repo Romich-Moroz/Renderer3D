@@ -8,7 +8,7 @@
         /// <summary>
         /// Vertices of the polygon
         /// </summary>
-        public PolygonVertex[] Vertices;
+        public VertexIndex[] Vertices;
 
         /// <summary>
         /// Contains indexes of vertices for each triangle

@@ -2,8 +2,8 @@
 {
     public struct TriangleIndex
     {
-        public int IndexX1;
-        public int IndexX2;
-        public int IndexX3;
+        public int IndexP1;
+        public int IndexP2;
+        public int IndexP3;
     }
 }

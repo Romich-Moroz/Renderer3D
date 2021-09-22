@@ -9,7 +9,7 @@ namespace Renderer3D.Models.Parser
     /// <summary>
     /// Parser for .obj files
     /// </summary>
-    public static class ObjectModelParser
+    public static class MeshParser
     {
         private static Vector4 ParseVertex(string[] values)
         {
@@ -56,16 +56,16 @@ namespace Renderer3D.Models.Parser
                 Z = float.Parse(values[3])
             };
         }
-        private static TriangleIndex[] SplitPolygon(List<PolygonVertex> vertices)
+        private static TriangleIndex[] SplitPolygon(List<VertexIndex> vertices)
         {
             TriangleIndex[] result = new TriangleIndex[vertices.Count - 2];
             if (vertices.Count == 3)
             {
                 result[0] = new TriangleIndex
                 {
-                    IndexX1 = vertices[0].VertexIndex,
-                    IndexX2 = vertices[1].VertexIndex,
-                    IndexX3 = vertices[2].VertexIndex
+                    IndexP1 = vertices[0].Vertex,
+                    IndexP2 = vertices[1].Vertex,
+                    IndexP3 = vertices[2].Vertex
                 };
             }
             else
@@ -74,9 +74,9 @@ namespace Renderer3D.Models.Parser
                 {
                     result[i - 2] = new TriangleIndex
                     {
-                        IndexX1 = vertices[0].VertexIndex,
-                        IndexX2 = vertices[i - 1].VertexIndex,
-                        IndexX3 = vertices[i].VertexIndex
+                        IndexP1 = vertices[0].Vertex,
+                        IndexP2 = vertices[i - 1].Vertex,
+                        IndexP3 = vertices[i].Vertex
                     };
                 }
             }
@@ -90,7 +90,7 @@ namespace Renderer3D.Models.Parser
                 throw new InvalidOperationException("Supplied line values are invalid");
             }
 
-            List<PolygonVertex> polygonVertices = new List<PolygonVertex>();
+            List<VertexIndex> polygonVertices = new List<VertexIndex>();
 
             for (int i = 1; i < values.Length; i++)
             {
@@ -107,11 +107,11 @@ namespace Renderer3D.Models.Parser
                     textureIndex = string.IsNullOrEmpty(polygonValues[1]) ? -1 : int.Parse(polygonValues[1]) - 1;
                 }
 
-                polygonVertices.Add(new PolygonVertex
+                polygonVertices.Add(new VertexIndex
                 {
-                    VertexIndex = verticeIndex,
-                    TextureIndex = textureIndex,
-                    NormalVectorIndex = normalVectorIndex
+                    Vertex = verticeIndex,
+                    Texture = textureIndex,
+                    Normal = normalVectorIndex
                 });
             }
 
@@ -127,7 +127,7 @@ namespace Renderer3D.Models.Parser
         /// </summary>
         /// <param name="objPath">File path to .obj file</param>
         /// <returns>Parsed model object</returns>
-        public static ObjectModel Parse(string objPath)
+        public static Mesh Parse(string objPath)
         {
             using StreamReader file = new StreamReader(objPath);
             string line;
@@ -170,7 +170,7 @@ namespace Renderer3D.Models.Parser
                 }
             }
 
-            return new ObjectModel(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray());
+            return new Mesh(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray());
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Renderer3D.Models.Parser
     /// <summary>
     /// Represents model parsed from .obj file
     /// </summary>
-    public class ObjectModel
+    public class Mesh
     {
         /// <summary>
         /// All vertices of the model (x, y, z, w)
@@ -25,7 +25,7 @@ namespace Renderer3D.Models.Parser
         /// </summary>
         public Polygon[] Polygons { get; }
 
-        public ObjectModel(Vector4[] vertices, Vector3[] texturePieces, Vector3[] normalVectors, Polygon[] polygons)
+        public Mesh(Vector4[] vertices, Vector3[] texturePieces, Vector3[] normalVectors, Polygon[] polygons)
         {
             (Vertices, TexturePieces, NormalVectors, Polygons) = (vertices, texturePieces, normalVectors, polygons);
         }

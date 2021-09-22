@@ -205,9 +205,9 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     Triangle triangle = new Triangle
                     {
-                        p1 = vertices[p.TriangleIndexes[i].IndexX1],
-                        p2 = vertices[p.TriangleIndexes[i].IndexX2],
-                        p3 = vertices[p.TriangleIndexes[i].IndexX3]
+                        p1 = vertices[p.TriangleIndexes[i].IndexP1],
+                        p2 = vertices[p.TriangleIndexes[i].IndexP2],
+                        p3 = vertices[p.TriangleIndexes[i].IndexP3]
                     };
                     var c = 25 + (i % p.TriangleIndexes.Length) * 192 / p.TriangleIndexes.Length;
                     DrawTriangle(triangle, lookVector, Color.FromArgb(1, (byte)c, (byte)c, (byte)c));
@@ -219,11 +219,11 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     if (i < p.Vertices.Length - 1)
                     {
-                        DrawLine(vertices[p.Vertices[i].VertexIndex].ToPoint(), vertices[p.Vertices[i + 1].VertexIndex].ToPoint(), color);
+                        DrawLine(vertices[p.Vertices[i].Vertex].ToPoint(), vertices[p.Vertices[i + 1].Vertex].ToPoint(), color);
                     }
                     else
                     {
-                        DrawLine(vertices[p.Vertices[^1].VertexIndex].ToPoint(), vertices[p.Vertices[0].VertexIndex].ToPoint(), color);
+                        DrawLine(vertices[p.Vertices[^1].Vertex].ToPoint(), vertices[p.Vertices[0].Vertex].ToPoint(), color);
                     }
                 }
             }

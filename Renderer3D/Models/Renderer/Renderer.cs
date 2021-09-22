@@ -100,7 +100,7 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Parsed model to render on bitmap
         /// </summary>
-        public ObjectModel ObjectModel { get; set; }
+        public Mesh Mesh { get; set; }
 
         private void UpdateWritableBitmap()
         {
@@ -135,15 +135,15 @@ namespace Renderer3D.Models.Renderer
             CameraUpVector = Vector3.Cross(rightVector, lookVector);
         }
 
-        public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model)
+        public Renderer(PixelFormat pixelFormat, int width, int height, Mesh model)
         {
-            (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
+            (PixelFormat, Width, Height, Mesh) = (pixelFormat, width, height, model);
 
             CameraTarget = FindGeometricAverage(model.Vertices);
             UpdateCameraUpVector();
 
             UpdateWritableBitmap();
-            _Vertices = new Vector3[ObjectModel.Vertices.Length];
+            _Vertices = new Vector3[Mesh.Vertices.Length];
         }
 
 
@@ -155,7 +155,7 @@ namespace Renderer3D.Models.Renderer
         public BitmapSource Render()
         {
 
-            Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
+            Debug.WriteLine($"Render started. Rendering {Mesh.Polygons.Length} polygons");
             writer.Clear();
             Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
                                     Matrix4x4.CreateRotationX(_ModelRotationX) *
@@ -168,7 +168,7 @@ namespace Renderer3D.Models.Renderer
             Stopwatch.Restart();
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Parallel.ForEach(Partitioner.Create(0, ObjectModel.Vertices.Length), Range =>
+            Parallel.ForEach(Partitioner.Create(0, Mesh.Vertices.Length), Range =>
              {
                  for (int i = Range.Item1; i < Range.Item2; i++)
                  {
@@ -176,7 +176,7 @@ namespace Renderer3D.Models.Renderer
                      (
                          Vector4.Transform
                          (
-                             ObjectModel.Vertices[i],
+                             Mesh.Vertices[i],
                              translationMatrix
                          ).PerspectiveDivide(),
                          viewportMatrix
@@ -188,7 +188,7 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            writer.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode, CameraPosition - CameraTarget);
+            writer.DrawPolygons(Mesh.Polygons, _Vertices, Colors.Black, TriangleMode, CameraPosition - CameraTarget);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
