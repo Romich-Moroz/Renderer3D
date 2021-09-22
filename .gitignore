@@ -343,3 +343,4 @@ healthchecksdb
 Renderer3D/RenderModels/Custom/*
 !Renderer3D/RenderModels/Custom/Readme.txt
 !Renderer3D/RenderModels/Skull/12140_Skull_v3_L2.obj
+!Renderer3D/RenderModels/Debug/debug.obj

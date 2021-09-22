@@ -188,7 +188,7 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            writer.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode, CameraTarget - CameraPosition);
+            writer.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black, TriangleMode, CameraPosition - CameraTarget);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

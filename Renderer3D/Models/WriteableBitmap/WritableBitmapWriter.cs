@@ -119,7 +119,7 @@ namespace Renderer3D.Models.WritableBitmap
 
                     if (_depthBuffer[index] < z)
                     {
-                        return; // Discard
+                        continue; // Discard
                     }
                     _depthBuffer[index] = z;
 
@@ -138,6 +138,7 @@ namespace Renderer3D.Models.WritableBitmap
                 return; // i dont care about degenerate triangles
             }
 
+            //sort by Y
             if (t.p1.Y > t.p2.Y)
             {
                 (t.p1, t.p2) = (t.p2, t.p1);
@@ -153,6 +154,7 @@ namespace Renderer3D.Models.WritableBitmap
                 (t.p2, t.p3) = (t.p3, t.p2);
             }
 
+            //calculate inverse slopes
             double dP1P2, dP1P3;
             if (t.p2.Y - t.p1.Y > 0)
             {
@@ -172,7 +174,10 @@ namespace Renderer3D.Models.WritableBitmap
                 dP1P3 = 0;
             }
 
-            for (int y = (int)t.p1.Y; y <= (int)t.p3.Y; y++)
+            var min = (int)t.p1.Y > 0 ? (int)t.p1.Y : 0;
+            var max = (int)t.p3.Y < pixelHeight ? (int)t.p3.Y : pixelHeight;
+
+            for (int y = min; y <= max; y++)
             {
                 if (y < t.p2.Y)
                 {
@@ -204,7 +209,8 @@ namespace Renderer3D.Models.WritableBitmap
                         p2 = vertices[p.TriangleIndexes[i].IndexX2],
                         p3 = vertices[p.TriangleIndexes[i].IndexX3]
                     };
-                    DrawTriangle(triangle, lookVector, color);
+                    var c = 25 + (i % p.TriangleIndexes.Length) * 192 / p.TriangleIndexes.Length;
+                    DrawTriangle(triangle, lookVector, Color.FromArgb(1, (byte)c, (byte)c, (byte)c));
                 }
             }
             else
@@ -256,9 +262,10 @@ namespace Renderer3D.Models.WritableBitmap
 
         public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles, Vector3 lookVector)
         {
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             try
             {
-                Parallel.ForEach(Partitioner.Create(0, polygons.Length), Range =>
+                Parallel.ForEach(Partitioner.Create(0, polygons.Length),options, Range =>
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
