@@ -9,7 +9,7 @@ namespace Renderer3D.Models.Parser
     /// <summary>
     /// Parser for .obj files
     /// </summary>
-    public static class ObjectModelParser
+    public static class MeshParser
     {
         private static Vector4 ParseVertex(string[] values)
         {
@@ -56,6 +56,32 @@ namespace Renderer3D.Models.Parser
                 Z = float.Parse(values[3])
             };
         }
+        private static TriangleIndex[] SplitPolygon(List<VertexIndex> polygonVertices)
+        {
+            TriangleIndex[] result = new TriangleIndex[polygonVertices.Count - 2];
+            if (polygonVertices.Count == 3)
+            {
+                result[0] = new TriangleIndex
+                {
+                    Index1 = polygonVertices[0],
+                    Index2 = polygonVertices[1],
+                    Index3 = polygonVertices[2],
+                };
+            }
+            else
+            {
+                for (int i = 2; i < polygonVertices.Count; i++)
+                {
+                    result[i - 2] = new TriangleIndex
+                    {
+                        Index1 = polygonVertices[0],
+                        Index2 = polygonVertices[i - 1],
+                        Index3 = polygonVertices[i]
+                    };
+                }
+            }
+            return result;
+        }
 
         private static Polygon ParsePolygon(string[] values, int vertexCount)
         {
@@ -64,7 +90,7 @@ namespace Renderer3D.Models.Parser
                 throw new InvalidOperationException("Supplied line values are invalid");
             }
 
-            List<PolygonVertex> polygonVertices = new List<PolygonVertex>();
+            List<VertexIndex> polygonVertices = new List<VertexIndex>();
 
             for (int i = 1; i < values.Length; i++)
             {
@@ -73,7 +99,7 @@ namespace Renderer3D.Models.Parser
                 int verticeIndex = int.Parse(polygonValues[0]);
                 verticeIndex = verticeIndex > 0 ? verticeIndex - 1 : vertexCount + verticeIndex;
 
-                int normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) : -1;
+                int normalVectorIndex = polygonValues.Length == 3 ? int.Parse(polygonValues[2]) - 1 : -1;
 
                 int textureIndex = -1;
                 if (polygonValues.Length >= 2)
@@ -81,17 +107,18 @@ namespace Renderer3D.Models.Parser
                     textureIndex = string.IsNullOrEmpty(polygonValues[1]) ? -1 : int.Parse(polygonValues[1]) - 1;
                 }
 
-                polygonVertices.Add(new PolygonVertex
+                polygonVertices.Add(new VertexIndex
                 {
-                    VertexIndex = verticeIndex,
-                    TextureIndex = textureIndex,
-                    NormalVectorIndex = normalVectorIndex
+                    Vertex = verticeIndex,
+                    Texture = textureIndex,
+                    Normal = normalVectorIndex
                 });
             }
 
             return new Polygon
             {
-                Vertices = polygonVertices.ToArray()
+                PolygonVertices = polygonVertices.ToArray(),
+                TriangleIndexes = SplitPolygon(polygonVertices)
             };
         }
 
@@ -100,7 +127,7 @@ namespace Renderer3D.Models.Parser
         /// </summary>
         /// <param name="objPath">File path to .obj file</param>
         /// <returns>Parsed model object</returns>
-        public static ObjectModel Parse(string objPath)
+        public static Mesh Parse(string objPath)
         {
             using StreamReader file = new StreamReader(objPath);
             string line;
@@ -143,7 +170,7 @@ namespace Renderer3D.Models.Parser
                 }
             }
 
-            return new ObjectModel(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray());
+            return new Mesh(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray());
         }
     }
 }

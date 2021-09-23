@@ -1,4 +1,4 @@
-﻿using Renderer3D.Models.Parser;
+﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Translation;
 using Renderer3D.Models.WritableBitmap;
 using System;
@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -18,9 +17,9 @@ namespace Renderer3D.Models.Renderer
     public class Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
-        private static readonly Vector3 DefaultUpVector = new Vector3 { X = 0, Y = 1, Z = 0 };
-        private Point[] _Vertices { get; set; }
-        private WriteableBitmap _bitmap { get; set; }
+        private readonly WritableBitmapWriter writer = new WritableBitmapWriter();
+        private Vector3[] Vertices { get; set; }
+        private Vector3[] Normals { get; set; }
         private int _width = 800;
         private float _ModelRotationX = 0;
         private float _ModelRotationY = 0;
@@ -63,12 +62,12 @@ namespace Renderer3D.Models.Renderer
         /// Format of pixels for rendered bitmap
         /// </summary>
         public readonly PixelFormat PixelFormat = PixelFormats.Bgr32;
-        public Vector3 Scale { get; set; } = new Vector3 { X = 1f, Y = 1f, Z = 1f };
+        public Vector3 Scale { get; set; } = Vector3.One;
 
         /// <summary>
         /// Position of the camera itself
         /// </summary>
-        public Vector3 CameraPosition { get; set; } = new Vector3 { X = 1, Y = 1, Z = 1 };
+        public Vector3 CameraPosition { get; set; } = Vector3.One;
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -88,25 +87,27 @@ namespace Renderer3D.Models.Renderer
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 CameraTarget { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 CameraTarget { get; set; } = Vector3.Zero;
 
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set; } = DefaultUpVector;
+        public Vector3 CameraUpVector { get; set; } = Vector3.UnitY;
 
-        public Vector3 Offset { get; set; } = new Vector3 { X = 0, Y = 0, Z = 0 };
+        public Vector3 Offset { get; set; } = Vector3.Zero;
+        public Vector3 LightPosition { get; set; } = Vector3.Zero;
+        public bool TriangleMode { get; set; } = false;
 
 
         /// <summary>
         /// Parsed model to render on bitmap
         /// </summary>
-        public ObjectModel ObjectModel { get; set; }
+        public Mesh Mesh { get; set; }
 
         private void UpdateWritableBitmap()
         {
-            _bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride));
-            _bitmap.Clear();
+            writer.Bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride)); ;
+            writer.Clear();
         }
 
         private void RotateCamera(Vector3 axis, float angle)
@@ -126,25 +127,27 @@ namespace Renderer3D.Models.Renderer
                 y += vertices[i].Y;
                 z += vertices[i].Z;
             }
-            return new Vector3 { X = (float)x/vertices.Length, Y = (float)y /vertices.Length, Z = (float)z /vertices.Length };
+            return new Vector3 { X = (float)x / vertices.Length, Y = (float)y / vertices.Length, Z = (float)z / vertices.Length };
         }
 
         private void UpdateCameraUpVector()
         {
-            var lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
-            var rightVector = Vector3.Cross(lookVector, DefaultUpVector);
+            Vector3 lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
+            Vector3 rightVector = Vector3.Cross(lookVector, Vector3.UnitY);
             CameraUpVector = Vector3.Cross(rightVector, lookVector);
         }
 
-        public Renderer(PixelFormat pixelFormat, int width, int height, ObjectModel model)
+        public Renderer(PixelFormat pixelFormat, int width, int height, Mesh model)
         {
-            (PixelFormat, Width, Height, ObjectModel) = (pixelFormat, width, height, model);
+            (PixelFormat, Width, Height, Mesh) = (pixelFormat, width, height, model);
 
             CameraTarget = FindGeometricAverage(model.Vertices);
+            LightPosition = CameraTarget + new Vector3(0, 100, 100);
             UpdateCameraUpVector();
 
             UpdateWritableBitmap();
-            _Vertices = new Point[ObjectModel.Vertices.Length];
+            Vertices = new Vector3[Mesh.Vertices.Length];
+            Normals = new Vector3[Mesh.NormalVectors.Length];
         }
 
 
@@ -155,58 +158,75 @@ namespace Renderer3D.Models.Renderer
         /// <returns>Rendered bitmap</returns>
         public BitmapSource Render()
         {
-            Debug.WriteLine($"Render started. Rendering {ObjectModel.Polygons.Length} polygons");
-            Stopwatch.Restart();
 
-            _bitmap.Clear();
-            Debug.WriteLine($"Clear time: {Stopwatch.ElapsedMilliseconds}");
-
-            Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
+            Debug.WriteLine($"Render started. Rendering {Mesh.Polygons.Length} polygons");
+            writer.Clear();
+            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Scale) *
                                     Matrix4x4.CreateRotationX(_ModelRotationX) *
                                     Matrix4x4.CreateRotationY(_ModelRotationY) *
                                     Matrix4x4.CreateTranslation(Offset) *
-                                    Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector) *
+                                    Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector);
+            Matrix4x4 perspectiveMatrix = worldMatrix *
                                     Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
-
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
-            Debug.WriteLine($"Translation matrix time: {Stopwatch.ElapsedMilliseconds}");
 
-            Parallel.ForEach(Partitioner.Create(0, ObjectModel.Vertices.Length), Range =>
+            Stopwatch.Restart();
+            long prevMs = Stopwatch.ElapsedMilliseconds;
+
+            Parallel.ForEach(Partitioner.Create(0, Mesh.Vertices.Length), Range =>
              {
                  for (int i = Range.Item1; i < Range.Item2; i++)
                  {
-                     Vector4 portVert = Vector4.Transform
+                     Vector4 coordinates = Vector4.Transform
                      (
                          Vector4.Transform
                          (
-                             ObjectModel.Vertices[i],
-                             translationMatrix
+                             Mesh.Vertices[i],
+                             perspectiveMatrix
                          ).PerspectiveDivide(),
                          viewportMatrix
                      );
-
-                     _Vertices[i] = new Point { X = portVert.X, Y = portVert.Y };
+                     Vertices[i] = new Vector3(coordinates.X, coordinates.Y, coordinates.Z);
                  }
              });
-            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds}");
+            Parallel.ForEach(Partitioner.Create(0, Mesh.NormalVectors.Length), Range =>
+            {
+                for (int i = Range.Item1; i < Range.Item2; i++)
+                {
+                    Vector4 normal = Vector4.Transform
+                    (
+                        Vector4.Transform
+                        (
+                            Mesh.NormalVectors[i],
+                            worldMatrix
+                        ),
+                        viewportMatrix
+                    );
+                    Normals[i] = new Vector3(normal.X, normal.Y, normal.Z);
+                }
+            });
+            Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
+            prevMs = Stopwatch.ElapsedMilliseconds;
 
-            _bitmap.DrawPolygons(ObjectModel.Polygons, _Vertices, Colors.Black);
+            writer.DrawPolygons(Mesh.Polygons, Vertices, Normals, Colors.Gray, TriangleMode, Vector3.Normalize(CameraPosition - CameraTarget), LightPosition);
 
-            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds}");
+            Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
+            prevMs = Stopwatch.ElapsedMilliseconds;
+
             Debug.WriteLine("Render ended\n");
             Stopwatch.Stop();
 
-            return _bitmap;
+            return writer.Bitmap;
         }
 
         public void RotateCameraX(float angle)
         {
-            RotateCamera(new Vector3 { X = 1, Y = 0, Z = 0 }, angle);
+            RotateCamera(Vector3.UnitX, angle);
         }
 
         public void RotateCameraY(float angle)
         {
-            RotateCamera(new Vector3 { X = 0, Y = 1, Z = 0 }, angle);
+            RotateCamera(Vector3.UnitY, angle);
         }
 
         public void RotateModelX(float angle)
@@ -221,12 +241,18 @@ namespace Renderer3D.Models.Renderer
 
         public void OffsetCamera(Vector3 offset)
         {
-            var look = CameraPosition - CameraTarget;
-            var max = Math.Abs(look.X);
+            Vector3 look = CameraPosition - CameraTarget;
+            float max = Math.Abs(look.X);
             if (max < Math.Abs(look.Y))
+            {
                 max = Math.Abs(look.Y);
+            }
+
             if (max < Math.Abs(look.Z))
+            {
                 max = Math.Abs(look.Z);
+            }
+
             CameraPosition += (look / max) * offset;
         }
     }

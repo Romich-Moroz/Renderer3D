@@ -3,19 +3,19 @@
     /// <summary>
     /// Represents single vertex of the polygon
     /// </summary>
-    public struct PolygonVertex
+    public struct VertexIndex
     {
         /// <summary>
         /// Index in the table of vertices. Also knows an v1
         /// </summary>
-        public int VertexIndex;
+        public int Vertex;
         /// <summary>
         /// Index in the table of texture pieces. Also knows as vt1
         /// </summary>
-        public int TextureIndex;
+        public int Texture;
         /// <summary>
         /// Index in the table of normal vectors. Also knows as vn1
         /// </summary>
-        public int NormalVectorIndex;
+        public int Normal;
     }
 }

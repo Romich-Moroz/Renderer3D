@@ -8,6 +8,7 @@
         /// <summary>
         /// Vertices of the polygon
         /// </summary>
-        public PolygonVertex[] Vertices;
+        public VertexIndex[] PolygonVertices;
+        public TriangleIndex[] TriangleIndexes;
     }
 }
