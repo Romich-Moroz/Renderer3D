@@ -1,4 +1,4 @@
-﻿using Renderer3D.Models.Parser;
+﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Translation;
 using Renderer3D.Models.WritableBitmap;
 using System;
@@ -18,7 +18,8 @@ namespace Renderer3D.Models.Renderer
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly WritableBitmapWriter writer = new WritableBitmapWriter();
-        private Vector3[] _Vertices { get; set; }
+        private Vector3[] Vertices { get; set; }
+        private Vector3[] Normals { get; set; }
         private int _width = 800;
         private float _ModelRotationX = 0;
         private float _ModelRotationY = 0;
@@ -94,6 +95,7 @@ namespace Renderer3D.Models.Renderer
         public Vector3 CameraUpVector { get; set; } = Vector3.UnitY;
 
         public Vector3 Offset { get; set; } = Vector3.Zero;
+        public Vector3 LightPosition { get; set; } = Vector3.Zero;
         public bool TriangleMode { get; set; } = false;
 
 
@@ -140,10 +142,12 @@ namespace Renderer3D.Models.Renderer
             (PixelFormat, Width, Height, Mesh) = (pixelFormat, width, height, model);
 
             CameraTarget = FindGeometricAverage(model.Vertices);
+            LightPosition = CameraTarget + new Vector3(0, 100, 100);
             UpdateCameraUpVector();
 
             UpdateWritableBitmap();
-            _Vertices = new Vector3[Mesh.Vertices.Length];
+            Vertices = new Vector3[Mesh.Vertices.Length];
+            Normals = new Vector3[Mesh.NormalVectors.Length];
         }
 
 
@@ -157,11 +161,12 @@ namespace Renderer3D.Models.Renderer
 
             Debug.WriteLine($"Render started. Rendering {Mesh.Polygons.Length} polygons");
             writer.Clear();
-            Matrix4x4 translationMatrix = Matrix4x4.CreateScale(Scale) *
+            Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Scale) *
                                     Matrix4x4.CreateRotationX(_ModelRotationX) *
                                     Matrix4x4.CreateRotationY(_ModelRotationY) *
                                     Matrix4x4.CreateTranslation(Offset) *
-                                    Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector) *
+                                    Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector);
+            Matrix4x4 perspectiveMatrix = worldMatrix *
                                     Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
 
@@ -172,23 +177,38 @@ namespace Renderer3D.Models.Renderer
              {
                  for (int i = Range.Item1; i < Range.Item2; i++)
                  {
-                     Vector4 portVert = Vector4.Transform
+                     Vector4 coordinates = Vector4.Transform
                      (
                          Vector4.Transform
                          (
                              Mesh.Vertices[i],
-                             translationMatrix
+                             perspectiveMatrix
                          ).PerspectiveDivide(),
                          viewportMatrix
                      );
-
-                     _Vertices[i] = new Vector3(portVert.X, portVert.Y, portVert.Z);
+                     Vertices[i] = new Vector3(coordinates.X, coordinates.Y, coordinates.Z);
                  }
              });
+            Parallel.ForEach(Partitioner.Create(0, Mesh.NormalVectors.Length), Range =>
+            {
+                for (int i = Range.Item1; i < Range.Item2; i++)
+                {
+                    Vector4 normal = Vector4.Transform
+                    (
+                        Vector4.Transform
+                        (
+                            Mesh.NormalVectors[i],
+                            worldMatrix
+                        ),
+                        viewportMatrix
+                    );
+                    Normals[i] = new Vector3(normal.X, normal.Y, normal.Z);
+                }
+            });
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            writer.DrawPolygons(Mesh.Polygons, _Vertices, Colors.Black, TriangleMode, CameraPosition - CameraTarget);
+            writer.DrawPolygons(Mesh.Polygons, Vertices, Normals, Colors.Gray, TriangleMode, CameraPosition, LightPosition);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

@@ -56,27 +56,27 @@ namespace Renderer3D.Models.Parser
                 Z = float.Parse(values[3])
             };
         }
-        private static TriangleIndex[] SplitPolygon(List<VertexIndex> vertices)
+        private static TriangleIndex[] SplitPolygon(List<VertexIndex> polygonVertices)
         {
-            TriangleIndex[] result = new TriangleIndex[vertices.Count - 2];
-            if (vertices.Count == 3)
+            TriangleIndex[] result = new TriangleIndex[polygonVertices.Count - 2];
+            if (polygonVertices.Count == 3)
             {
                 result[0] = new TriangleIndex
                 {
-                    IndexP1 = vertices[0].Vertex,
-                    IndexP2 = vertices[1].Vertex,
-                    IndexP3 = vertices[2].Vertex
+                    Index1 = polygonVertices[0],
+                    Index2 = polygonVertices[1],
+                    Index3 = polygonVertices[2],
                 };
             }
             else
             {
-                for (int i = 2; i < vertices.Count; i++)
+                for (int i = 2; i < polygonVertices.Count; i++)
                 {
                     result[i - 2] = new TriangleIndex
                     {
-                        IndexP1 = vertices[0].Vertex,
-                        IndexP2 = vertices[i - 1].Vertex,
-                        IndexP3 = vertices[i].Vertex
+                        Index1 = polygonVertices[0],
+                        Index2 = polygonVertices[i - 1],
+                        Index3 = polygonVertices[i]
                     };
                 }
             }
@@ -117,7 +117,7 @@ namespace Renderer3D.Models.Parser
 
             return new Polygon
             {
-                Vertices = polygonVertices.ToArray(),
+                PolygonVertices = polygonVertices.ToArray(),
                 TriangleIndexes = SplitPolygon(polygonVertices)
             };
         }

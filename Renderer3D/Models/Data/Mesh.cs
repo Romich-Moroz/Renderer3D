@@ -1,7 +1,6 @@
-﻿using Renderer3D.Models.Data;
-using System.Numerics;
+﻿using System.Numerics;
 
-namespace Renderer3D.Models.Parser
+namespace Renderer3D.Models.Data
 {
     /// <summary>
     /// Represents model parsed from .obj file

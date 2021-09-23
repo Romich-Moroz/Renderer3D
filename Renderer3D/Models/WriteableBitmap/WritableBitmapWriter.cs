@@ -88,10 +88,16 @@ namespace Renderer3D.Models.WritableBitmap
             return min + (max - min) * Clamp(gradient);
         }
 
+        private static float ComputeNDotL(Vector3 vertex, Vector3 normal, Vector3 lightPosition)
+        {
+            Vector3 lightDirection = lightPosition - vertex;
+            return Math.Max(0, -Vector3.Dot(Vector3.Normalize(normal), Vector3.Normalize(lightDirection)));
+        }
+
         // drawing line between 2 points from left to right
         // papb -> pcpd
         // pa, pb, pc, pd must then be sorted before
-        private void ProcessScanLine(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, Color color)
+        private void ProcessScanLine(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, int color)
         {
             // Thanks to current Y, we can compute the gradient to compute others values like
             // the starting X (sx) and ending X (ex) to draw between
@@ -104,8 +110,7 @@ namespace Renderer3D.Models.WritableBitmap
 
             float z1 = Interpolate(pa.Z, pb.Z, gradient1);
             float z2 = Interpolate(pc.Z, pd.Z, gradient2);
-            // starting Z & ending Z
-            int color_data = color.ToInt();
+
             for (int x = sx; x < ex; x++)
             {
                 float gradient = (x - sx) / (float)(ex - sx);
@@ -125,79 +130,91 @@ namespace Renderer3D.Models.WritableBitmap
 
                     unsafe
                     {
-                        *((int*)pBackBuffer) = color_data;
+                        *((int*)pBackBuffer) = color;
                     }
                 }
             }
         }
 
-        private void DrawTriangle(Triangle t, Vector3 lookVector, Color color)
+        private void DrawTriangle(Triangle t, Vector3 lookVector, Vector3 lightPos, Color color)
         {
-            if (t.p1.Y == t.p2.Y && t.p1.Y == t.p3.Y || Vector3.Dot(Vector3.Cross(t.p2 - t.p1, t.p3 - t.p1), lookVector) < 0)
+            Vector3 N = Vector3.Cross(t.v2.Coordinates - t.v1.Coordinates, t.v3.Coordinates - t.v1.Coordinates);
+            if (t.v1.Coordinates.Y == t.v2.Coordinates.Y && t.v1.Coordinates.Y == t.v3.Coordinates.Y ||
+                Vector3.Dot(t.v1.Coordinates - lookVector, N) >= 0)
             {
                 return; // i dont care about degenerate triangles
             }
 
             //sort by Y
-            if (t.p1.Y > t.p2.Y)
+            if (t.v1.Coordinates.Y > t.v2.Coordinates.Y)
             {
-                (t.p1, t.p2) = (t.p2, t.p1);
+                (t.v1, t.v2) = (t.v2, t.v1);
             }
 
-            if (t.p1.Y > t.p3.Y)
+            if (t.v1.Coordinates.Y > t.v3.Coordinates.Y)
             {
-                (t.p1, t.p3) = (t.p3, t.p1);
+                (t.v1, t.v3) = (t.v3, t.v1);
             }
 
-            if (t.p2.Y > t.p3.Y)
+            if (t.v2.Coordinates.Y > t.v3.Coordinates.Y)
             {
-                (t.p2, t.p3) = (t.p3, t.p2);
+                (t.v2, t.v3) = (t.v3, t.v2);
             }
+
+            // normal face's vector is the average normal between each vertex's normal
+            // computing also the center point of the face
+            Vector3 vnFace = (t.v1.Normal + t.v2.Normal + t.v3.Normal) / 3;
+            Vector3 centerPoint = (t.v1.Coordinates + t.v2.Coordinates + t.v3.Coordinates) / 3;
+
+            // computing the cos of the angle between the light vector and the normal vector
+            // it will return a value between 0 and 1 that will be used as the intensity of the color
+            float ndotl = ComputeNDotL(centerPoint, vnFace, lightPos);
+            int shadowColor = Color.FromRgb((byte)(color.R * ndotl), (byte)(color.G * ndotl), (byte)(color.B * ndotl)).ToInt();
+            //var intColor = color.ToInt();
+            //int colorShaded = color.to
 
             //calculate inverse slopes
             double dP1P2, dP1P3;
-            if (t.p2.Y - t.p1.Y > 0)
+            if (t.v2.Coordinates.Y - t.v1.Coordinates.Y > 0)
             {
-                dP1P2 = (t.p2.X - t.p1.X) / (t.p2.Y - t.p1.Y);
+                dP1P2 = (t.v2.Coordinates.X - t.v1.Coordinates.X) / (t.v2.Coordinates.Y - t.v1.Coordinates.Y);
             }
             else
             {
                 dP1P2 = 0;
             }
 
-            if (t.p3.Y - t.p1.Y > 0)
+            if (t.v3.Coordinates.Y - t.v1.Coordinates.Y > 0)
             {
-                dP1P3 = (t.p3.X - t.p1.X) / (t.p3.Y - t.p1.Y);
+                dP1P3 = (t.v3.Coordinates.X - t.v1.Coordinates.X) / (t.v3.Coordinates.Y - t.v1.Coordinates.Y);
             }
             else
             {
                 dP1P3 = 0;
             }
 
-            var min = (int)t.p1.Y > 0 ? (int)t.p1.Y : 0;
-            var max = (int)t.p3.Y < pixelHeight ? (int)t.p3.Y : pixelHeight;
+            int min = (int)t.v1.Coordinates.Y > 0 ? (int)t.v1.Coordinates.Y : 0;
+            int max = (int)t.v3.Coordinates.Y < pixelHeight ? (int)t.v3.Coordinates.Y : pixelHeight;
 
             for (int y = min; y <= max; y++)
             {
-                if (y < t.p2.Y)
+                if (y < t.v2.Coordinates.Y)
                 {
-                    ProcessScanLine(y, t.p1, dP1P2 > dP1P3 ? t.p3 : t.p2, t.p1, dP1P2 > dP1P3 ? t.p2 : t.p3, color);
+                    ProcessScanLine(y, t.v1.Coordinates, dP1P2 > dP1P3 ? t.v3.Coordinates : t.v2.Coordinates,
+                                        t.v1.Coordinates, dP1P2 > dP1P3 ? t.v2.Coordinates : t.v3.Coordinates, shadowColor);
                 }
                 else
                 {
-                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.p1 : t.p2, t.p3, dP1P2 > dP1P3 ? t.p2 : t.p1, t.p3, color);
+                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.v1.Coordinates : t.v2.Coordinates, t.v3.Coordinates,
+                                        dP1P2 > dP1P3 ? t.v2.Coordinates : t.v1.Coordinates, t.v3.Coordinates, shadowColor);
                 }
             }
-
-            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p1.ToPoint(), t.p2.ToPoint());
-            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p2.ToPoint(), t.p3.ToPoint());
-            //DrawLine(backBuffer, stride, pixelWidth, pixelHeight, color, t.p3.ToPoint(), t.p1.ToPoint());
         }
 
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        private void DrawPolygon(Polygon p, Vector3[] vertices, Color color, bool drawTriangles, Vector3 lookVector)
+        private void DrawPolygon(Polygon p, Vector3[] vertices, Vector3[] normals, Color color, bool drawTriangles, Vector3 lookVector, Vector3 lightPos)
         {
             if (drawTriangles)
             {
@@ -205,25 +222,24 @@ namespace Renderer3D.Models.WritableBitmap
                 {
                     Triangle triangle = new Triangle
                     {
-                        p1 = vertices[p.TriangleIndexes[i].IndexP1],
-                        p2 = vertices[p.TriangleIndexes[i].IndexP2],
-                        p3 = vertices[p.TriangleIndexes[i].IndexP3]
+                        v1 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index1.Vertex], Normal = normals[p.TriangleIndexes[i].Index1.Normal] },
+                        v2 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index2.Vertex], Normal = normals[p.TriangleIndexes[i].Index2.Normal] },
+                        v3 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index3.Vertex], Normal = normals[p.TriangleIndexes[i].Index3.Normal] }
                     };
-                    var c = 25 + (i % p.TriangleIndexes.Length) * 192 / p.TriangleIndexes.Length;
-                    DrawTriangle(triangle, lookVector, Color.FromArgb(1, (byte)c, (byte)c, (byte)c));
+                    DrawTriangle(triangle, lookVector, lightPos, color);
                 }
             }
             else
             {
-                for (int i = 0; i < p.Vertices.Length; i++)
+                for (int i = 0; i < p.PolygonVertices.Length; i++)
                 {
-                    if (i < p.Vertices.Length - 1)
+                    if (i < p.PolygonVertices.Length - 1)
                     {
-                        DrawLine(vertices[p.Vertices[i].Vertex].ToPoint(), vertices[p.Vertices[i + 1].Vertex].ToPoint(), color);
+                        DrawLine(vertices[p.PolygonVertices[i].Vertex].ToPoint(), vertices[p.PolygonVertices[i + 1].Vertex].ToPoint(), color);
                     }
                     else
                     {
-                        DrawLine(vertices[p.Vertices[^1].Vertex].ToPoint(), vertices[p.Vertices[0].Vertex].ToPoint(), color);
+                        DrawLine(vertices[p.PolygonVertices[^1].Vertex].ToPoint(), vertices[p.PolygonVertices[0].Vertex].ToPoint(), color);
                     }
                 }
             }
@@ -260,18 +276,18 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Color color, bool drawTriangles, Vector3 lookVector)
+        public void DrawPolygons(Polygon[] polygons, Vector3[] vertices, Vector3[] normals, Color color, bool drawTriangles, Vector3 lookVector, Vector3 lightPos)
         {
-            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             try
             {
-                Parallel.ForEach(Partitioner.Create(0, polygons.Length),options, Range =>
-                {
-                    for (int i = Range.Item1; i < Range.Item2; i++)
-                    {
-                        DrawPolygon(polygons[i], vertices, color, drawTriangles, lookVector);
-                    }
-                });
+                Parallel.ForEach(Partitioner.Create(0, polygons.Length), options, Range =>
+                 {
+                     for (int i = Range.Item1; i < Range.Item2; i++)
+                     {
+                         DrawPolygon(polygons[i], vertices, normals, color, drawTriangles, lookVector, lightPos);
+                     }
+                 });
                 Bitmap.Lock();
                 Bitmap.AddDirtyRect(new Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight));
             }
