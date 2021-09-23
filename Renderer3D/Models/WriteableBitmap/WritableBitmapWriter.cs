@@ -138,9 +138,8 @@ namespace Renderer3D.Models.WritableBitmap
 
         private void DrawTriangle(Triangle t, Vector3 lookVector, Vector3 lightPos, Color color)
         {
-            Vector3 N = Vector3.Cross(t.v2.Coordinates - t.v1.Coordinates, t.v3.Coordinates - t.v1.Coordinates);
             if (t.v1.Coordinates.Y == t.v2.Coordinates.Y && t.v1.Coordinates.Y == t.v3.Coordinates.Y ||
-                Vector3.Dot(t.v1.Coordinates - lookVector, N) >= 0)
+                Vector3.Dot(t.v1.Coordinates - lookVector, Vector3.Cross(t.v2.Coordinates - t.v1.Coordinates, t.v3.Coordinates - t.v1.Coordinates)) >= 0)
             {
                 return; // i dont care about degenerate triangles
             }
