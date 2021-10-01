@@ -39,8 +39,9 @@ namespace Renderer3D.Viewmodels
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Debug/debug.obj");
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/car/uploads_files_2792345_Koenigsegg.obj");
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/RC_Car/RC_Car.obj");
-            Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/Boots.obj");
+            //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/Boots.obj");
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/Eye/eyeball.obj");
+            Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/Head/head.obj");
             Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
 
             //Window resize handler
@@ -48,6 +49,7 @@ namespace Renderer3D.Viewmodels
             {
                 Renderer.Width = (int)e.NewSize.Width;
                 Renderer.Height = (int)e.NewSize.Height - 30;
+                Renderer.UpdateWritableBitmap();
 
                 UpdateFrame();
             };
@@ -64,8 +66,8 @@ namespace Renderer3D.Viewmodels
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
                     double x = currentPos.X - PreviousPosition.X;
                     double y = currentPos.Y - PreviousPosition.Y;
-                    Renderer.RotateModelY((float)x * Sensitivity);
-                    Renderer.RotateModelX((float)y * Sensitivity);
+                    Renderer.ModelRotationX += (float)y * Sensitivity;
+                    Renderer.ModelRotationY += (float)x * Sensitivity;
                     //Renderer.RotateCameraY((float)x * Sensitivity);
                     //Renderer.RotateCameraX((float)y * Sensitivity);
                     PreviousPosition = currentPos;
@@ -84,14 +86,8 @@ namespace Renderer3D.Viewmodels
 
             MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) =>
             {
-                if (args.Delta > 0)
-                {
-                    Renderer.OffsetCamera(new Vector3 { X = -ScaleStep, Y = -ScaleStep, Z = -ScaleStep });
-                }
-                else
-                {
-                    Renderer.OffsetCamera(new Vector3 { X = ScaleStep, Y = ScaleStep, Z = ScaleStep });
-                }
+                int mult = args.Delta > 0 ? -1 : 1;
+                Renderer.OffsetCamera(new Vector3 { X = mult * ScaleStep, Y = mult * ScaleStep, Z = mult * ScaleStep });
                 UpdateFrame();
             }, null);
 

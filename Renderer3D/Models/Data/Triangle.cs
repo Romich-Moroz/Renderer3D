@@ -2,6 +2,6 @@
 {
     public struct Triangle
     {
-        public Vertex v1, v2, v3;
+        public Vertex v0, v1, v2;
     }
 }
