@@ -37,9 +37,9 @@ namespace Renderer3D.Viewmodels
             //Init renderer (for test purposes change your model name here)
             Mesh objectModel = MeshParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj");
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Debug/debug.obj");
-            //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/bugatti/bugatti.obj");
             //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/car/uploads_files_2792345_Koenigsegg.obj");
-            //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/King/king.obj");
+            //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/RC_Car/RC_Car.obj");
+            //Mesh objectModel = MeshParser.Parse("../../../RenderModels/Custom/Eye/eyeball.obj");
             Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, objectModel);
 
             //Window resize handler
