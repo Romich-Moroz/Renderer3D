@@ -89,8 +89,8 @@ namespace Renderer3D.Models.WritableBitmap
 
         private static bool IsInvisible(Triangle t)
         {
-            return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y)
-                || (Vector3.Dot(t.v0.Coordinates, Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates)) >= 0);
+            return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) || 
+                (Vector3.Normalize(Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates)).Z >= 0);
         }
 
         private static void SortByY(ref Triangle t)
@@ -132,31 +132,6 @@ namespace Renderer3D.Models.WritableBitmap
                 dP1P3 = 0;
             }
             return (dP1P2, dP1P3);
-        }
-
-        private void DrawLine(Point x1, Point x2, Color color)
-        {
-            int color_data = color.ToInt();
-            DdaStruct dda = DdaStruct.FromPoints(x1, x2);
-
-            for (int i = 0; i < dda.LineLength; i++)
-            {
-                double x = x1.X + i * dda.DeltaX;
-                double y = x1.Y + i * dda.DeltaY;
-                if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHeight))
-                {
-                    IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
-
-                    unsafe
-                    {
-                        *((int*)pBackBuffer) = color_data;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
         }
 
         private void ProcessScanLine(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, int color)
@@ -208,8 +183,27 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
+        private void CounterClockwise(ref Triangle t)
+        {
+            if (t.v0.Coordinates.Y > t.v1.Coordinates.Y)
+            {
+                (t.v0, t.v1) = (t.v1, t.v0);
+            }
+
+            if (t.v0.Coordinates.Y > t.v2.Coordinates.Y)
+            {
+                (t.v0, t.v2) = (t.v2, t.v0);
+            }
+
+            if (t.v1.Coordinates.X > t.v2.Coordinates.X)
+            {
+                (t.v1, t.v2) = (t.v2, t.v1);
+            }
+        }
+
         private void DrawTriangle(Triangle t, Vector3 lightPos, Color color)
         {
+            //CounterClockwise(ref t);
             if (IsInvisible(t))
             {
                 return;
@@ -310,6 +304,30 @@ namespace Renderer3D.Models.WritableBitmap
             finally
             {
                 Bitmap.Unlock();
+            }
+        }
+        public void DrawLine(Point x1, Point x2, Color color)
+        {
+            int color_data = color.ToInt();
+            DdaStruct dda = DdaStruct.FromPoints(x1, x2);
+
+            for (int i = 0; i < dda.LineLength; i++)
+            {
+                double x = x1.X + i * dda.DeltaX;
+                double y = x1.Y + i * dda.DeltaY;
+                if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHeight))
+                {
+                    IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
+
+                    unsafe
+                    {
+                        *((int*)pBackBuffer) = color_data;
+                    }
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
