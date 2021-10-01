@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -22,6 +21,10 @@ namespace Renderer3D.Models.Renderer
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly WritableBitmapWriter writer = new WritableBitmapWriter();
         private readonly PixelFormat PixelFormat = PixelFormats.Bgr32;
+        /// <summary>
+        /// Parsed model to render on bitmap
+        /// </summary>
+        private Mesh _Mesh;
 
         #endregion
 
@@ -109,11 +112,6 @@ namespace Renderer3D.Models.Renderer
         #region Render Properties
 
         /// <summary>
-        /// Parsed model to render on bitmap
-        /// </summary>
-        public Mesh Mesh { get; set; }
-
-        /// <summary>
         /// Turns on/off triangle render mode
         /// </summary>
         public bool TriangleMode { get; set; } = false;
@@ -175,23 +173,23 @@ namespace Renderer3D.Models.Renderer
 
         private void ProjectVertices(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix)
         {
-            Parallel.ForEach(Partitioner.Create(0, Mesh.OriginalVertices.Length), Range =>
+            Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalVertices.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
                     Vector4 coordinates = Vector4.Transform
                     (
-                        PerspectiveDivide(Vector4.Transform(Mesh.OriginalVertices[i], perspectiveMatrix)),
+                        PerspectiveDivide(Vector4.Transform(_Mesh.OriginalVertices[i], perspectiveMatrix)),
                         viewportMatrix
                     );
-                    Mesh.TransformedVertices[i] = new Vector3(coordinates.X, coordinates.Y, coordinates.Z);
+                    _Mesh.TransformedVertices[i] = new Vector3(coordinates.X, coordinates.Y, coordinates.Z);
                 }
             });
         }
 
         private void ProjectNormals(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix)
         {
-            Parallel.ForEach(Partitioner.Create(0, Mesh.OriginalNormalVectors.Length), Range =>
+            Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalNormalVectors.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
@@ -199,12 +197,12 @@ namespace Renderer3D.Models.Renderer
                     (
                         Vector4.Transform
                         (
-                            Mesh.OriginalNormalVectors[i],
+                            _Mesh.OriginalNormalVectors[i],
                             viewMatrix
                         ),
                         viewportMatrix
                     );
-                    Mesh.TransformedNormalVectors[i] = new Vector3(normal.X, normal.Y, normal.Z);
+                    _Mesh.TransformedNormalVectors[i] = new Vector3(normal.X, normal.Y, normal.Z);
                 }
             });
         }
@@ -215,16 +213,33 @@ namespace Renderer3D.Models.Renderer
 
         public Renderer(PixelFormat pixelFormat, int width, int height, Mesh model)
         {
-            (PixelFormat, Width, Height, Mesh) = (pixelFormat, width, height, model);
+            (PixelFormat, Width, Height, _Mesh) = (pixelFormat, width, height, model);
 
-            CameraTarget = FindGeometricAverage(model.OriginalVertices);
-            LightPosition = CameraTarget + new Vector3(0, 100, 100);
-            UpdateCameraUpVector();
+            ChangeMesh(model);
 
             UpdateWritableBitmap();
         }
 
         #region Public Methods
+        public void ResetState()
+        {
+            Scale = Vector3.One;
+            Offset = Vector3.Zero;
+            ModelRotationX = 0;
+            ModelRotationY = 0;
+            CameraPosition = Vector3.One;
+            CameraTarget = FindGeometricAverage(_Mesh.OriginalVertices);
+            CameraUpVector = Vector3.UnitY;
+            LightPosition = CameraTarget + new Vector3(-5, 100, 100);
+            TriangleMode = false;
+            UpdateCameraUpVector();
+        }
+
+        public void ChangeMesh(Mesh model)
+        {
+            _Mesh = model;
+            ResetState();
+        }
 
         /// <summary>
         /// Recreates bitmap with new width and height
@@ -281,7 +296,7 @@ namespace Renderer3D.Models.Renderer
         public BitmapSource Render()
         {
 
-            Debug.WriteLine($"Render started. Rendering {Mesh.Polygons.Length} polygons");
+            Debug.WriteLine($"Render started. Rendering {_Mesh.Polygons.Length} polygons");
             writer.Clear();
 
             TransformMatrixes matrixes = GetTransformMatrixes();
@@ -296,7 +311,7 @@ namespace Renderer3D.Models.Renderer
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            writer.DrawPolygons(Mesh.Polygons, Mesh.TransformedVertices, Mesh.TransformedNormalVectors, Colors.Gray, TriangleMode, LightPosition);
+            writer.DrawPolygons(_Mesh.Polygons, _Mesh.TransformedVertices, _Mesh.TransformedNormalVectors, Colors.Gray, TriangleMode, LightPosition);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 

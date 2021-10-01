@@ -89,7 +89,7 @@ namespace Renderer3D.Models.WritableBitmap
 
         private static bool IsInvisible(Triangle t)
         {
-            return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) || 
+            return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) ||
                 (Vector3.Normalize(Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates)).Z >= 0);
         }
 
