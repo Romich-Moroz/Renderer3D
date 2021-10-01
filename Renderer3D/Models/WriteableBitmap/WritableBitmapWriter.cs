@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -16,16 +17,18 @@ namespace Renderer3D.Models.WritableBitmap
     /// </summary>
     public class WritableBitmapWriter
     {
-        private static byte[] _blankBuffer;
+        private static byte[] _blankBuffer; 
         private const int lineColor = 0;
         private readonly int rastColor = Colors.Gray.ToInt();
-        private WriteableBitmap _bitmap;
 
         private float[] _depthBuffer;
+        private SpinLock[] _lockBuffer;
         private IntPtr backBuffer;
         private int stride;
         private int pixelWidth;
         private int pixelHeight;
+
+        private WriteableBitmap _bitmap;
         public WriteableBitmap Bitmap
         {
             get => _bitmap;
@@ -39,6 +42,7 @@ namespace Renderer3D.Models.WritableBitmap
                 stride = value.BackBufferStride;
                 _blankBuffer = new byte[bitmapLength];
                 _depthBuffer = new float[value.PixelWidth * value.PixelHeight];
+                _lockBuffer = new SpinLock[value.PixelWidth * value.PixelHeight];
                 _bitmap = value;
             }
         }
@@ -122,15 +126,28 @@ namespace Renderer3D.Models.WritableBitmap
                     IntPtr pBackBuffer = backBuffer + y * stride + x * 4;
                     int index = (x + y * pixelWidth);
 
-                    if (_depthBuffer[index] < z)
+                    bool lockTaken = false;
+                    try
                     {
-                        continue; // Discard
-                    }
-                    _depthBuffer[index] = z;
+                        _lockBuffer[index].Enter(ref lockTaken);
 
-                    unsafe
+                        if (_depthBuffer[index] < z)
+                        {
+                            continue; // Discard
+                        }
+                        _depthBuffer[index] = z;
+
+                        unsafe
+                        {
+                            *((int*)pBackBuffer) = color;
+                        }
+                    }
+                    finally
                     {
-                        *((int*)pBackBuffer) = color;
+                        if (lockTaken)
+                        {
+                            _lockBuffer[index].Exit(false);
+                        }
                     }
                 }
             }
@@ -169,8 +186,6 @@ namespace Renderer3D.Models.WritableBitmap
             // it will return a value between 0 and 1 that will be used as the intensity of the color
             float ndotl = ComputeNDotL(centerPoint, vnFace, lightPos);
             int shadowColor = Color.FromRgb((byte)(color.R * ndotl), (byte)(color.G * ndotl), (byte)(color.B * ndotl)).ToInt();
-            //var intColor = color.ToInt();
-            //int colorShaded = color.to
 
             //calculate inverse slopes
             double dP1P2, dP1P3;
