@@ -13,7 +13,7 @@ namespace Renderer3D.Models.Extensions
 
         public static int ToInt(this Color color)
         {
-            return color.R << 16 | color.G << 8 | color.B << 0;
+            return (color.R << 16) | (color.G << 8) | (color.B << 0);
         }
     }
 }

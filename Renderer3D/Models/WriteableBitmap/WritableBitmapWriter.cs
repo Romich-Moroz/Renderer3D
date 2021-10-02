@@ -8,9 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
-namespace Renderer3D.Models.WritableBitmap
+namespace Renderer3D.Models.WriteableBitmap
 {
     /// <summary>
     /// Drawing extensions for writeable bitmap
@@ -30,7 +29,7 @@ namespace Renderer3D.Models.WritableBitmap
         private int pixelWidth;
         private int pixelHeight;
 
-        private WriteableBitmap _bitmap;
+        private System.Windows.Media.Imaging.WriteableBitmap _bitmap;
 
         #endregion
 
@@ -39,7 +38,7 @@ namespace Renderer3D.Models.WritableBitmap
         /// <summary>
         /// Represents bitmap this writer is using
         /// </summary>
-        public WriteableBitmap Bitmap
+        public System.Windows.Media.Imaging.WriteableBitmap Bitmap
         {
             get => _bitmap;
             set
@@ -90,7 +89,7 @@ namespace Renderer3D.Models.WritableBitmap
         private static bool IsInvisible(Triangle t)
         {
             return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) ||
-                (Vector3.Normalize(Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates)).Z >= 0);
+                (Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates).Z >= 0);
         }
 
         private static void SortByY(ref Triangle t)
@@ -154,7 +153,7 @@ namespace Renderer3D.Models.WritableBitmap
                 if (x >= 0 && y >= 0 && x < pixelWidth && y < pixelHeight)
                 {
                     IntPtr pBackBuffer = backBuffer + y * stride + x * 4;
-                    int index = (x + y * pixelWidth);
+                    int index = x + y * pixelWidth;
 
                     bool lockTaken = false;
                     try
@@ -169,7 +168,7 @@ namespace Renderer3D.Models.WritableBitmap
 
                         unsafe
                         {
-                            *((int*)pBackBuffer) = color;
+                            *(int*)pBackBuffer = color;
                         }
                     }
                     finally
@@ -183,27 +182,8 @@ namespace Renderer3D.Models.WritableBitmap
             }
         }
 
-        private void CounterClockwise(ref Triangle t)
-        {
-            if (t.v0.Coordinates.Y > t.v1.Coordinates.Y)
-            {
-                (t.v0, t.v1) = (t.v1, t.v0);
-            }
-
-            if (t.v0.Coordinates.Y > t.v2.Coordinates.Y)
-            {
-                (t.v0, t.v2) = (t.v2, t.v0);
-            }
-
-            if (t.v1.Coordinates.X > t.v2.Coordinates.X)
-            {
-                (t.v1, t.v2) = (t.v2, t.v1);
-            }
-        }
-
         private void DrawTriangle(Triangle t, Vector3 lightPos, Color color)
         {
-            //CounterClockwise(ref t);
             if (IsInvisible(t))
             {
                 return;
@@ -315,13 +295,13 @@ namespace Renderer3D.Models.WritableBitmap
             {
                 double x = x1.X + i * dda.DeltaX;
                 double y = x1.Y + i * dda.DeltaY;
-                if ((x >= 0 && y >= 0) && (x < pixelWidth && y < pixelHeight))
+                if (x >= 0 && y >= 0 && x < pixelWidth && y < pixelHeight)
                 {
                     IntPtr pBackBuffer = backBuffer + (int)y * stride + (int)x * 4;
 
                     unsafe
                     {
-                        *((int*)pBackBuffer) = color_data;
+                        *(int*)pBackBuffer = color_data;
                     }
                 }
                 else
@@ -336,13 +316,13 @@ namespace Renderer3D.Models.WritableBitmap
             ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             try
             {
-                Parallel.ForEach(Partitioner.Create(0, polygons.Length), options, Range =>
-                {
-                    for (int i = Range.Item1; i < Range.Item2; i++)
-                    {
-                        DrawPolygon(polygons[i], vertices, normals, color, drawTriangles, lightPos);
-                    }
-                });
+                _ = Parallel.ForEach(Partitioner.Create(0, polygons.Length), options, Range =>
+                  {
+                      for (int i = Range.Item1; i < Range.Item2; i++)
+                      {
+                          DrawPolygon(polygons[i], vertices, normals, color, drawTriangles, lightPos);
+                      }
+                  });
                 Bitmap.Lock();
                 Bitmap.AddDirtyRect(new Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight));
             }

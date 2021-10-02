@@ -1,6 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Translation;
-using Renderer3D.Models.WritableBitmap;
+using Renderer3D.Models.WriteableBitmap;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -161,9 +161,9 @@ namespace Renderer3D.Models.Renderer
         private TransformMatrixes GetTransformMatrixes()
         {
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(Scale) *
-                              Matrix4x4.CreateRotationX(ModelRotationX) *
-                              Matrix4x4.CreateRotationY(ModelRotationY) *
-                              Matrix4x4.CreateTranslation(Offset);
+                                    Matrix4x4.CreateRotationX(ModelRotationX) *
+                                    Matrix4x4.CreateRotationY(ModelRotationY) *
+                                    Matrix4x4.CreateTranslation(Offset);
             Matrix4x4 viewMatrix = worldMatrix * Matrix4x4.CreateLookAt(CameraPosition, CameraTarget, CameraUpVector);
             Matrix4x4 perspectiveMatrix = viewMatrix * Matrix4x4.CreatePerspectiveFieldOfView(Fov, AspectRatio, 1, 100);
             Matrix4x4 viewportMatrix = Translator.CreateViewportMatrix(Width, Height);
@@ -173,7 +173,7 @@ namespace Renderer3D.Models.Renderer
 
         private void ProjectVertices(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix)
         {
-            Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalVertices.Length), Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalVertices.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
@@ -189,7 +189,7 @@ namespace Renderer3D.Models.Renderer
 
         private void ProjectNormals(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix)
         {
-            Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalNormalVectors.Length), Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _Mesh.OriginalNormalVectors.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
@@ -246,7 +246,7 @@ namespace Renderer3D.Models.Renderer
         /// </summary>
         public void UpdateWritableBitmap()
         {
-            writer.Bitmap = new WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride)); ;
+            writer.Bitmap = new System.Windows.Media.Imaging.WriteableBitmap(BitmapSource.Create(Width, Height, 96d, 96d, PixelFormat, null, new byte[Height * Stride], Stride)); ;
             writer.Clear();
         }
 

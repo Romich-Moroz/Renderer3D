@@ -13,49 +13,47 @@ namespace Renderer3D.Models.Parser
     {
         private static Vector4 ParseVertex(string[] values)
         {
-            if (values[0] != "v" || values.Length < 4)
+            if (values[0] == "v" && values.Length >= 4)
             {
-                throw new InvalidOperationException("Supplied line values are invalid");
+                return new Vector4
+                {
+                    X = float.Parse(values[1]),
+                    Y = float.Parse(values[2]),
+                    Z = float.Parse(values[3]),
+                    W = values.Length == 5 ? float.Parse(values[4]) : 1
+                };
             }
-
-            return new Vector4
-            {
-                X = float.Parse(values[1]),
-                Y = float.Parse(values[2]),
-                Z = float.Parse(values[3]),
-                W = values.Length == 5 ? float.Parse(values[4]) : 1
-            };
+            throw new InvalidOperationException("Supplied line values are invalid");
         }
 
         private static Vector3 ParseVertexTexture(string[] values)
         {
-            if (values[0] != "vt" || values.Length < 2)
+            if (values[0] == "vt" && values.Length >= 2)
             {
-                throw new InvalidOperationException("Supplied line values are invalid");
+                return new Vector3
+                {
+                    X = float.Parse(values[1]),
+                    Y = values.Length >= 3 ? float.Parse(values[2]) : 0,
+                    Z = values.Length == 4 ? float.Parse(values[3]) : 0
+                };
             }
-
-            return new Vector3
-            {
-                X = float.Parse(values[1]),
-                Y = values.Length >= 3 ? float.Parse(values[2]) : 0,
-                Z = values.Length == 4 ? float.Parse(values[3]) : 0
-            };
+            throw new InvalidOperationException("Supplied line values are invalid");
         }
 
         private static Vector3 ParseNormalVector(string[] values)
         {
-            if (values[0] != "vn" || values.Length < 4)
+            if (values[0] == "vn" && values.Length >= 4)
             {
-                throw new InvalidOperationException("Supplied line values are invalid");
+                return new Vector3
+                {
+                    X = float.Parse(values[1]),
+                    Y = float.Parse(values[2]),
+                    Z = float.Parse(values[3])
+                };
             }
-
-            return new Vector3
-            {
-                X = float.Parse(values[1]),
-                Y = float.Parse(values[2]),
-                Z = float.Parse(values[3])
-            };
+            throw new InvalidOperationException("Supplied line values are invalid");
         }
+
         private static TriangleIndex[] SplitPolygon(List<VertexIndex> polygonVertices)
         {
             TriangleIndex[] result = new TriangleIndex[polygonVertices.Count - 2];
