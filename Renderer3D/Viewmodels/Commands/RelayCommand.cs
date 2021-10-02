@@ -37,4 +37,35 @@ namespace Renderer3D.Viewmodels.Commands
             _executeAction((T)parameter);
         }
     }
+
+    internal class RelayCommand : ICommand
+    {
+
+        public event EventHandler CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+
+        private readonly Action _executeAction;
+
+        private readonly Func<bool> _canExecuteAction;
+
+        public RelayCommand(Action executeAction, Func<bool> canExecuteAction)
+        {
+            _executeAction = executeAction ?? throw new ArgumentNullException(nameof(executeAction));
+            _canExecuteAction = canExecuteAction;
+        }
+
+        public bool CanExecute(object parameter)
+        {
+
+            return _canExecuteAction == null || _canExecuteAction();
+        }
+
+        public void Execute(object parameter)
+        {
+            _executeAction();
+        }
+    }
 }
