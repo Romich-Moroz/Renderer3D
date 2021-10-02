@@ -1,4 +1,5 @@
-﻿using Renderer3D.Models.Data;
+﻿using Microsoft.Win32;
+using Renderer3D.Models.Data;
 using Renderer3D.Models.Parser;
 using Renderer3D.Models.Renderer;
 using Renderer3D.Viewmodels.Commands;
@@ -20,6 +21,7 @@ namespace Renderer3D.Viewmodels
         public ICommand MouseMoveCommand { get; }
         public ICommand MouseWheelCommand { get; }
         public ICommand KeyDownCommand { get; }
+        public ICommand OpenModelCommand { get; }
 
         public Point PreviousPosition { get; set; }
         public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
@@ -88,6 +90,7 @@ namespace Renderer3D.Viewmodels
                 return false;
             });
 
+            //Mouse wheel handler
             MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) =>
             {
                 int mult = args.Delta > 0 ? -1 : 1;
@@ -95,6 +98,7 @@ namespace Renderer3D.Viewmodels
                 UpdateFrame();
             }, null);
 
+            //Key down handler
             KeyDownCommand = new RelayCommand<KeyEventArgs>((args) =>
             {
                 if (args.Key == Key.A)
@@ -146,6 +150,17 @@ namespace Renderer3D.Viewmodels
                     };
                 }
 
+                UpdateFrame();
+            }, null);
+
+            //Main menu button handler
+            OpenModelCommand = new RelayCommand(() =>
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    Renderer.ChangeMesh(MeshParser.Parse(openFileDialog.FileName));
+                }
                 UpdateFrame();
             }, null);
 
