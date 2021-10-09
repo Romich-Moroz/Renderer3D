@@ -23,6 +23,7 @@ namespace Renderer3D.Models.Data
         public Vector3[] OriginalNormalVectors { get; }
 
         public Vector3[] TransformedNormalVectors { get; set; }
+
         /// <summary>
         /// Polygons of the model (v1, v2, v3, v4...)
         /// </summary>
@@ -30,7 +31,8 @@ namespace Renderer3D.Models.Data
 
         public Mesh(Vector4[] vertices, Vector3[] texturePieces, Vector3[] normalVectors, Polygon[] polygons)
         {
-            (OriginalVertices, OriginalTexturePieces, OriginalNormalVectors, Polygons, TransformedVertices, TransformedNormalVectors) = (vertices, texturePieces, normalVectors, polygons, new Vector3[vertices.Length], new Vector3[normalVectors.Length]);
+            (OriginalVertices, OriginalTexturePieces, OriginalNormalVectors, Polygons, TransformedVertices, TransformedNormalVectors) = 
+                (vertices, texturePieces, normalVectors, polygons, new Vector3[vertices.Length], new Vector3[normalVectors.Length]);
         }
     }
 }

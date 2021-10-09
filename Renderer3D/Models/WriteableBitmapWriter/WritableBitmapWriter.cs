@@ -8,8 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
-namespace Renderer3D.Models.WriteableBitmap
+namespace Renderer3D.Models.WriteableBitmapWriter
 {
     /// <summary>
     /// Drawing extensions for writeable bitmap
@@ -38,7 +39,7 @@ namespace Renderer3D.Models.WriteableBitmap
         /// <summary>
         /// Represents bitmap this writer is using
         /// </summary>
-        public System.Windows.Media.Imaging.WriteableBitmap Bitmap
+        public WriteableBitmap Bitmap
         {
             get => _bitmap;
             set

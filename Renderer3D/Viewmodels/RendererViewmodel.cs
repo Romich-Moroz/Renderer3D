@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using Renderer3D.Models.Data;
 using Renderer3D.Models.Parser;
-using Renderer3D.Models.Renderer;
+using Renderer3D.Models.Scene;
 using Renderer3D.Viewmodels.Commands;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -28,7 +28,7 @@ namespace Renderer3D.Viewmodels
         public float MoveStep { get; set; } = 0.25f;
         public float ScaleStep { get; set; } = 1f;
 
-        private Renderer Renderer { get; }
+        private Scene Scene { get; }
 
         private readonly List<Mesh> Meshes = new List<Mesh>
         {
@@ -43,19 +43,17 @@ namespace Renderer3D.Viewmodels
 
         private void UpdateFrame()
         {
-            Frame = Renderer.Render();
+            Frame = Scene.Render();
         }
 
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
         {
-            Renderer = new Renderer(pixelFormat, (int)window.Width, (int)window.Height, Meshes[0]);
+            Scene = new Scene(pixelFormat, (int)window.Width, (int)window.Height, Meshes[0]);
 
             //Window resize handler
             window.SizeChanged += (sender, e) =>
             {
-                Renderer.Width = (int)e.NewSize.Width;
-                Renderer.Height = (int)e.NewSize.Height - 30;
-                Renderer.UpdateWritableBitmap();
+                Scene.ResizeScene((int)e.NewSize.Width, (int)e.NewSize.Height - 30);
 
                 UpdateFrame();
             };
@@ -70,12 +68,9 @@ namespace Renderer3D.Viewmodels
                 else
                 {
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
-                    double x = currentPos.X - PreviousPosition.X;
-                    double y = currentPos.Y - PreviousPosition.Y;
-                    Renderer.ModelRotationX += (float)y * Sensitivity;
-                    Renderer.ModelRotationY += (float)x * Sensitivity;
-                    //Renderer.RotateCameraY((float)x * Sensitivity);
-                    //Renderer.RotateCameraX((float)y * Sensitivity);
+                    double y = currentPos.X - PreviousPosition.X;
+                    double x = currentPos.Y - PreviousPosition.Y;
+                    Scene.RotateModel(new Vector3((float)x * Sensitivity, (float)y * Sensitivity, 0));
                     PreviousPosition = currentPos;
                 }
                 UpdateFrame();
@@ -94,51 +89,26 @@ namespace Renderer3D.Viewmodels
             MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) =>
             {
                 int mult = args.Delta > 0 ? -1 : 1;
-                Renderer.OffsetCamera(new Vector3 { X = mult * ScaleStep, Y = mult * ScaleStep, Z = mult * ScaleStep });
+                Scene.OffsetCamera(new Vector3 { X = mult * ScaleStep, Y = mult * ScaleStep, Z = mult * ScaleStep });
                 UpdateFrame();
             }, null);
 
             //Key down handler
             KeyDownCommand = new RelayCommand<KeyEventArgs>((args) =>
             {
-                if (args.Key == Key.A)
-                {
-                    Renderer.Offset += new Vector3 { X = -1, Y = 0, Z = 0 } * MoveStep;
-                }
-
-                if (args.Key == Key.D)
-                {
-                    Renderer.Offset += new Vector3 { X = 1, Y = 0, Z = 0 } * MoveStep;
-                }
-
-                if (args.Key == Key.W)
-                {
-                    Renderer.Offset += new Vector3 { X = 0, Y = 1, Z = 0 } * MoveStep;
-                }
-
-                if (args.Key == Key.S)
-                {
-                    Renderer.Offset += new Vector3 { X = 0, Y = -1, Z = 0 } * MoveStep;
-                }
-
-                if (args.Key == Key.Q)
-                {
-                    Renderer.Offset += new Vector3 { X = 0, Y = 0, Z = 1 } * MoveStep;
-                }
-
-                if (args.Key == Key.E)
-                {
-                    Renderer.Offset += new Vector3 { X = 0, Y = 0, Z = -1 } * MoveStep;
-                }
+                int offsetX = args.Key == Key.A ? -1 : args.Key == Key.D ? 1 : 0;
+                int offsetY = args.Key == Key.W ? 1 : args.Key == Key.S ? -1 : 0;
+                int offsetZ = args.Key == Key.Q ? 1 : args.Key == Key.E ? -1 : 0;
+                Scene.OffsetModel(new Vector3(offsetX, offsetY, offsetZ));
 
                 if (args.Key == Key.R)
                 {
-                    Renderer.ResetState();
+                    Scene.ResetState();
                 }
 
                 if (args.Key == Key.T)
                 {
-                    Renderer.TriangleMode ^= true;
+                    Scene.ToggleTriangleMode();
                 }
 
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)
@@ -146,7 +116,7 @@ namespace Renderer3D.Viewmodels
                     int index = args.Key - Key.D0;
                     if (index < Meshes.Count)
                     {
-                        Renderer.ChangeMesh(Meshes[index]);
+                        Scene.ChangeMesh(Meshes[index]);
                     };
                 }
 
@@ -159,13 +129,13 @@ namespace Renderer3D.Viewmodels
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    Renderer.ChangeMesh(MeshParser.Parse(openFileDialog.FileName));
+                    Scene.ChangeMesh(MeshParser.Parse(openFileDialog.FileName));
                 }
                 UpdateFrame();
             }, null);
 
             //Initial render
-            Frame = Renderer.Render();
+            Frame = Scene.Render();
         }
     }
 }
