@@ -43,7 +43,7 @@ namespace Renderer3D.Viewmodels
 
         private void UpdateFrame()
         {
-            Frame = Scene.Render();
+            Frame = Scene.GetRenderedScene();
         }
 
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
@@ -135,7 +135,7 @@ namespace Renderer3D.Viewmodels
             }, null);
 
             //Initial render
-            Frame = Scene.Render();
+            Frame = Scene.GetRenderedScene();
         }
     }
 }

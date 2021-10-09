@@ -1,6 +1,5 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Processing;
-using Renderer3D.Models.WriteableBitmapWriter;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -17,7 +16,7 @@ namespace Renderer3D.Models.Scene
     public class Scene
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
-        private readonly WritableBitmapWriter BitmapWriter = new WritableBitmapWriter();
+        private readonly Renderer Renderer = new Renderer();
 
         private BitmapProperties _bitmapProperties = new BitmapProperties(PixelFormats.Bgr32, 800, 600);
         private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
@@ -49,12 +48,6 @@ namespace Renderer3D.Models.Scene
             });
         }
 
-        private void UpdateWritableBitmap()
-        {
-            BitmapWriter.Bitmap = _bitmapProperties.CreateFromProperties();
-            BitmapWriter.Clear();
-        }
-
         public void OffsetModel(Vector3 offset)
         {
             _modelProperties.Offset += offset;
@@ -74,7 +67,7 @@ namespace Renderer3D.Models.Scene
         {
             _bitmapProperties.Width = newWidth;
             _bitmapProperties.Height = newHeight;
-            UpdateWritableBitmap();
+            Renderer.Bitmap = _bitmapProperties.CreateFromProperties();
         }
 
         public void RotateModel(Vector3 rotation)
@@ -103,7 +96,7 @@ namespace Renderer3D.Models.Scene
         {
             _mesh = mesh;
             ResetState();
-            UpdateWritableBitmap();
+            Renderer.Bitmap = _bitmapProperties.CreateFromProperties();
         }
 
         public void ToggleTriangleMode()
@@ -115,12 +108,11 @@ namespace Renderer3D.Models.Scene
         /// Renders the loaded model into bitmap
         /// </summary>
         /// <returns>Rendered bitmap</returns>
-        public BitmapSource Render()
+        public BitmapSource GetRenderedScene()
         {
 
             Debug.WriteLine($"Render started. Rendering {_mesh.Polygons.Length} polygons");
-            BitmapWriter.Clear();
-
+            Renderer.Clear();
             TransformMatrixes matrixes = Projection.GetTransformMatrixes(_modelProperties, _cameraProperties, _bitmapProperties);
 
             Stopwatch.Restart();
@@ -133,14 +125,14 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            BitmapWriter.DrawPolygons(_mesh.Polygons, _mesh.TransformedVertices, _mesh.TransformedNormalVectors, Colors.Gray, _renderProperties.TriangleMode, _lightingProperties.LightSourcePosition);
+            Renderer.RenderPolygons(_mesh.Polygons, _mesh.TransformedVertices, _mesh.TransformedNormalVectors, Colors.Gray, _renderProperties.TriangleMode, _lightingProperties.LightSourcePosition);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 
             Debug.WriteLine("Render ended\n");
             Stopwatch.Stop();
 
-            return BitmapWriter.Bitmap;
+            return Renderer.Bitmap;
         }
     }
 }
