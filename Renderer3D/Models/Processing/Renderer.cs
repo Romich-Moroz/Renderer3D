@@ -42,6 +42,31 @@ namespace Renderer3D.Models.Processing
             }
         }
 
+        private void RasterizeTriangle(TriangleValue t, int rasterizationColor)
+        {
+            Vector3 v0 = t.v0.Coordinates.ToV3();
+            Vector3 v1 = t.v1.Coordinates.ToV3();
+            Vector3 v2 = t.v2.Coordinates.ToV3();
+
+            double dP1P2, dP1P3;
+            (dP1P2, dP1P3) = Processing.GetInverseSlopes(v0, v1, v2);
+
+            int min = (int)v0.Y > 0 ? (int)v0.Y : 0;
+            int max = (int)v2.Y < _bitmapWriter.Height ? (int)v2.Y : _bitmapWriter.Width;
+
+            for (int y = min; y <= max; y++)
+            {
+                if (y < v1.Y)
+                {
+                    ProcessScanLine(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2, rasterizationColor);
+                }
+                else
+                {
+                    ProcessScanLine(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2, rasterizationColor);
+                }
+            }
+        }
+
         private void RenderTriangle(TriangleValue t, Vector3 lightPos, Color color)
         {
             if (Processing.IsTriangleInvisible(t))
@@ -58,29 +83,10 @@ namespace Renderer3D.Models.Processing
             Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
             Vector3 centerPoint = (v0 + v1 + v2) / 3;
 
-            // computing the cos of the angle between the light vector and the normal vector
-            // it will return a value between 0 and 1 that will be used as the intensity of the color
             float ndotl = Processing.ComputeNDotL(centerPoint, vnFace, lightPos);
-            int shadowColor = Color.FromRgb((byte)(color.R * ndotl), (byte)(color.G * ndotl), (byte)(color.B * ndotl)).ToInt();
+            int shadowColor = Processing.MultiplyColorByFloat(color, ndotl);
 
-            //calculate inverse slopes
-            double dP1P2, dP1P3;
-            (dP1P2, dP1P3) = Processing.GetInverseSlopes(t);
-
-            int min = (int)t.v0.Coordinates.Y > 0 ? (int)t.v0.Coordinates.Y : 0;
-            int max = (int)t.v2.Coordinates.Y < _bitmapWriter.Height ? (int)t.v2.Coordinates.Y : _bitmapWriter.Width;
-
-            for (int y = min; y <= max; y++)
-            {
-                if (y < t.v1.Coordinates.Y)
-                {
-                    ProcessScanLine(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2, shadowColor);
-                }
-                else
-                {
-                    ProcessScanLine(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2, shadowColor);
-                }
-            }
+            RasterizeTriangle(t, shadowColor);
         }
 
         private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)

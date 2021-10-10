@@ -2,6 +2,7 @@
 using Renderer3D.Models.Extensions;
 using System;
 using System.Numerics;
+using System.Windows.Media;
 
 namespace Renderer3D.Models.Processing
 {
@@ -10,6 +11,11 @@ namespace Renderer3D.Models.Processing
         public static float Clamp(float value, float min = 0, float max = 1)
         {
             return Math.Max(min, Math.Min(value, max));
+        }
+
+        public static int MultiplyColorByFloat(Color color, float multiplier)
+        {
+            return Color.FromRgb((byte)(color.R * multiplier), (byte)(color.G * multiplier), (byte)(color.B * multiplier)).ToInt();
         }
 
         /// <summary>
@@ -54,21 +60,21 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public static (double, double) GetInverseSlopes(TriangleValue t)
+        public static (double, double) GetInverseSlopes(Vector3 v0, Vector3 v1, Vector3 v2)
         {
             double dP1P2, dP1P3;
-            if (t.v1.Coordinates.Y - t.v0.Coordinates.Y > 0)
+            if (v1.Y - v0.Y > 0)
             {
-                dP1P2 = (t.v1.Coordinates.X - t.v0.Coordinates.X) / (t.v1.Coordinates.Y - t.v0.Coordinates.Y);
+                dP1P2 = (v1.X - v0.X) / (v1.Y - v0.Y);
             }
             else
             {
                 dP1P2 = 0;
             }
 
-            if (t.v2.Coordinates.Y - t.v0.Coordinates.Y > 0)
+            if (v2.Y - v0.Y > 0)
             {
-                dP1P3 = (t.v2.Coordinates.X - t.v0.Coordinates.X) / (t.v2.Coordinates.Y - t.v0.Coordinates.Y);
+                dP1P3 = (v2.X - v0.X) / (v2.Y - v0.Y);
             }
             else
             {
