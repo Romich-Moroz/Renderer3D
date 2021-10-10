@@ -59,7 +59,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public static (double, double) GetInverseSlopes(Vector3 v0, Vector3 v1, Vector3 v2)
+        public static (double, double) GetInverseSlopes(Vector4 v0, Vector4 v1, Vector4 v2)
         {
             double dP1P2, dP1P3;
             if (v1.Y - v0.Y > 0)

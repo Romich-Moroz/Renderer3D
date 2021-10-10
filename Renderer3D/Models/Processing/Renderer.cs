@@ -21,8 +21,9 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, int color, RenderProperties renderProperties)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
         {
+            int colorInt = color.ToInt();
             for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
             {
                 float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
@@ -30,10 +31,13 @@ namespace Renderer3D.Models.Processing
                 switch (renderProperties.RenderMode)
                 {
                     case RenderMode.FlatShading:
-                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, colorInt);
                         break;
                     case RenderMode.PhongShading:
-
+                        //var n = Vector3.Normalize(Calculation.InterpolateNormal(scanlineStruct.Pa.Normal, scanlineStruct.Pb.Normal, renderProperties.InterpolationParameter));
+                        //float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - new Vector3(x, scanlineStruct.Y, z), n) * lightProperties.Intensity;
+                        //int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
+                        //_bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, shadowColor);
                         break;
                     default:
                         throw new NotImplementedException("Specified render mode is not implemented");
@@ -41,30 +45,16 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RasterizeTriangle(TriangleValue t, RenderProperties renderProperties, int rasterizationColor)
+        private void RasterizeTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color = default)
         {
             Calculation.SortTriangleVerticesByY(ref t);
 
-            Vector3 v0 = t.v0.Coordinates.ToV3();
-            Vector3 v1 = t.v1.Coordinates.ToV3();
-            Vector3 v2 = t.v2.Coordinates.ToV3();
-
-            double dP1P2, dP1P3;
-            (dP1P2, dP1P3) = Calculation.GetInverseSlopes(v0, v1, v2);
-
-            int min = (int)v0.Y > 0 ? (int)v0.Y : 0;
-            int max = (int)v2.Y < _bitmapWriter.Height ? (int)v2.Y : _bitmapWriter.Width;
+            int min = (int)t.v0.Coordinates.Y > 0 ? (int)t.v0.Coordinates.Y : 0;
+            int max = (int)t.v2.Coordinates.Y < _bitmapWriter.Height ? (int)t.v2.Coordinates.Y : _bitmapWriter.Width;
 
             for (int y = min; y <= max; y++)
             {
-                if (y < v1.Y)
-                {
-                    ProcessScanLine(new ScanlineStruct(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2), rasterizationColor, renderProperties);
-                }
-                else
-                {
-                    ProcessScanLine(new ScanlineStruct(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2), rasterizationColor, renderProperties);
-                }
+                ProcessScanLine(new ScanlineStruct(y, t), lightProperties, renderProperties, color);
             }
         }
 
@@ -85,7 +75,7 @@ namespace Renderer3D.Models.Processing
             float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
             int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
 
-            RasterizeTriangle(t, renderProperties, shadowColor);
+            RasterizeTriangle(t, lightProperties, renderProperties, shadowColor.ToColor());
         }
 
         private void RenderPhongTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
@@ -95,17 +85,7 @@ namespace Renderer3D.Models.Processing
                 return;
             }
 
-            Vector3 v0 = t.v0.Coordinates.ToV3();
-            Vector3 v1 = t.v1.Coordinates.ToV3();
-            Vector3 v2 = t.v2.Coordinates.ToV3();
-
-            Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
-            Vector3 centerPoint = (v0 + v1 + v2) / 3;
-
-            float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
-            int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
-
-            RasterizeTriangle(t, renderProperties, shadowColor);
+            RasterizeTriangle(t, lightProperties, renderProperties, color);
         }
 
         private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)

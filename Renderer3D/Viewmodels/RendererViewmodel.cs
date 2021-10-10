@@ -113,6 +113,11 @@ namespace Renderer3D.Viewmodels
                     Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.FlatShading ? RenderMode.LinesOnly : RenderMode.FlatShading;
                 }
 
+                if (args.Key == Key.P)
+                {
+                    Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.PhongShading ? RenderMode.LinesOnly : RenderMode.PhongShading;
+                }
+
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)
                 {
                     int index = args.Key - Key.D0;

@@ -1,5 +1,4 @@
 ﻿using Renderer3D.Models.Processing;
-using System.Numerics;
 
 namespace Renderer3D.Models.Data
 {
@@ -14,18 +13,39 @@ namespace Renderer3D.Models.Data
         public float Z1 { get; set; }
         public float Z2 { get; set; }
 
-        public ScanlineStruct(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd)
+        public TriangleValue Triangle { get; set; }
+
+        public ScanlineStruct(int y, TriangleValue t)
         {
-            Gradient1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1;
-            Gradient2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1;
+            double dP1P2, dP1P3;
+            (dP1P2, dP1P3) = Calculation.GetInverseSlopes(t.v0.Coordinates, t.v1.Coordinates, t.v2.Coordinates);
 
-            StartX = (int)Calculation.Interpolate(pa.X, pb.X, Gradient1);
-            EndX = (int)Calculation.Interpolate(pc.X, pd.X, Gradient2);
+            VertexValue pa, pb, pc, pd;
+            if (y < t.v1.Coordinates.Y)
+            {
+                pa = t.v0;
+                pb = dP1P2 > dP1P3 ? t.v2 : t.v1;
+                pc = t.v0;
+                pd = dP1P2 > dP1P3 ? t.v1 : t.v2;
+            }
+            else
+            {
+                pa = dP1P2 > dP1P3 ? t.v0 : t.v1;
+                pb = t.v2;
+                pc = dP1P2 > dP1P3 ? t.v1 : t.v0;
+                pd = t.v2;
+            }
 
-            Z1 = Calculation.Interpolate(pa.Z, pb.Z, Gradient1);
-            Z2 = Calculation.Interpolate(pc.Z, pd.Z, Gradient2);
+            Gradient1 = pa.Coordinates.Y != pb.Coordinates.Y ? (y - pa.Coordinates.Y) / (pb.Coordinates.Y - pa.Coordinates.Y) : 1;
+            Gradient2 = pc.Coordinates.Y != pd.Coordinates.Y ? (y - pc.Coordinates.Y) / (pd.Coordinates.Y - pc.Coordinates.Y) : 1;
 
-            Y = y;
+            StartX = (int)Calculation.Interpolate(pa.Coordinates.X, pb.Coordinates.X, Gradient1);
+            EndX = (int)Calculation.Interpolate(pc.Coordinates.X, pd.Coordinates.X, Gradient2);
+
+            Z1 = Calculation.Interpolate(pa.Coordinates.Z, pb.Coordinates.Z, Gradient1);
+            Z2 = Calculation.Interpolate(pc.Coordinates.Z, pd.Coordinates.Z, Gradient2);
+
+            (Y, Triangle) = (y, t);
         }
     }
 }
