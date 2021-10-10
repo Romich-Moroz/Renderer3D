@@ -1,4 +1,5 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Extensions;
 using System;
 using System.Numerics;
 
@@ -29,13 +30,13 @@ namespace Renderer3D.Models.Processing
             return Math.Max(0, -Vector3.Dot(Vector3.Normalize(normal), Vector3.Normalize(lightDirection)));
         }
 
-        public static bool IsTriangleInvisible(Triangle t)
+        public static bool IsTriangleInvisible(TriangleValue t)
         {
             return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) ||
-                (Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates).Z >= 0);
+                (Vector3.Cross(t.v1.Coordinates.ToV3() - t.v0.Coordinates.ToV3(), t.v2.Coordinates.ToV3() - t.v0.Coordinates.ToV3()).Z >= 0);
         }
 
-        public static void SortTriangleVerticesByY(ref Triangle t)
+        public static void SortTriangleVerticesByY(ref TriangleValue t)
         {
             if (t.v0.Coordinates.Y > t.v1.Coordinates.Y)
             {
@@ -53,7 +54,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public static (double, double) GetInverseSlopes(Triangle t)
+        public static (double, double) GetInverseSlopes(TriangleValue t)
         {
             double dP1P2, dP1P3;
             if (t.v1.Coordinates.Y - t.v0.Coordinates.Y > 0)

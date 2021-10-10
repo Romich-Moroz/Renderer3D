@@ -56,10 +56,9 @@ namespace Renderer3D.Models.Processing
             return new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
         }
 
-        public static Vector3 ProjectVertex(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix, Vector4 vertex)
+        public static Vector4 ProjectVertex(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix, Vector4 vertex)
         {
-            Vector4 result = Vector4.Transform(PerspectiveDivide(Vector4.Transform(vertex, perspectiveMatrix)), viewportMatrix);
-            return new Vector3(result.X, result.Y, result.Z);
+            return Vector4.Transform(PerspectiveDivide(Vector4.Transform(vertex, perspectiveMatrix)), viewportMatrix);
         }
 
         public static Vector3 ProjectNormal(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix, Vector3 normal)

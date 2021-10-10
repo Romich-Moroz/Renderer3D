@@ -28,22 +28,22 @@ namespace Renderer3D.Models.Scene
 
         private void ProjectVertices(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix)
         {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalVertices.Length), Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Vertices.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedVertices[i] = Projection.ProjectVertex(perspectiveMatrix, viewportMatrix, _mesh.OriginalVertices[i]);
+                    _mesh.TransformedModel.Vertices[i] = Projection.ProjectVertex(perspectiveMatrix, viewportMatrix, _mesh.OriginalModel.Vertices[i]);
                 }
             });
         }
 
         private void ProjectNormals(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix)
         {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalNormalVectors.Length), Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Normals.Length), Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedNormalVectors[i] = Projection.ProjectNormal(viewMatrix, viewportMatrix, _mesh.OriginalNormalVectors[i]);
+                    _mesh.TransformedModel.Normals[i] = Projection.ProjectNormal(viewMatrix, viewportMatrix, _mesh.OriginalModel.Normals[i]);
                 }
             });
         }
@@ -87,7 +87,7 @@ namespace Renderer3D.Models.Scene
             _modelProperties.Offset = Vector3.Zero;
             _modelProperties.Rotation = Vector3.Zero;
             _cameraProperties.CameraPosition = Vector3.One;
-            _cameraProperties.SetTargetToCenter(_mesh.OriginalVertices);
+            _cameraProperties.SetTargetToCenter(_mesh.OriginalModel.Vertices);
             _lightingProperties.LightSourcePosition = _cameraProperties.CameraTarget + new Vector3(-5, 100, 100);
             _renderProperties.TriangleMode = false;
         }
@@ -111,7 +111,7 @@ namespace Renderer3D.Models.Scene
         public BitmapSource GetRenderedScene()
         {
 
-            Debug.WriteLine($"Render started. Rendering {_mesh.Polygons.Length} polygons");
+            Debug.WriteLine($"Render started. Rendering {_mesh.TransformedModel.Polygons.Length} polygons");
             Renderer.Clear();
             TransformMatrixes matrixes = Projection.GetTransformMatrixes(_modelProperties, _cameraProperties, _bitmapProperties);
 
@@ -125,7 +125,7 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Renderer.RenderPolygons(_mesh.Polygons, _mesh.TransformedVertices, _mesh.TransformedNormalVectors, Colors.Gray, _renderProperties.TriangleMode, _lightingProperties.LightSourcePosition);
+            Renderer.RenderModel(_mesh.TransformedModel, Colors.Gray, _renderProperties.TriangleMode, _lightingProperties.LightSourcePosition);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 

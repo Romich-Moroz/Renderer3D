@@ -41,7 +41,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RenderTriangle(Triangle t, Vector3 lightPos, Color color)
+        private void RenderTriangle(TriangleValue t, Vector3 lightPos, Color color)
         {
             if (Processing.IsTriangleInvisible(t))
             {
@@ -50,8 +50,12 @@ namespace Renderer3D.Models.Processing
 
             Processing.SortTriangleVerticesByY(ref t);
 
+            Vector3 v0 = t.v0.Coordinates.ToV3();
+            Vector3 v1 = t.v1.Coordinates.ToV3();
+            Vector3 v2 = t.v2.Coordinates.ToV3();
+
             Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
-            Vector3 centerPoint = (t.v0.Coordinates + t.v1.Coordinates + t.v2.Coordinates) / 3;
+            Vector3 centerPoint = (v0 + v1 + v2) / 3;
 
             // computing the cos of the angle between the light vector and the normal vector
             // it will return a value between 0 and 1 that will be used as the intensity of the color
@@ -69,13 +73,11 @@ namespace Renderer3D.Models.Processing
             {
                 if (y < t.v1.Coordinates.Y)
                 {
-                    ProcessScanLine(y, t.v0.Coordinates, dP1P2 > dP1P3 ? t.v2.Coordinates : t.v1.Coordinates,
-                                        t.v0.Coordinates, dP1P2 > dP1P3 ? t.v1.Coordinates : t.v2.Coordinates, shadowColor);
+                    ProcessScanLine(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2, shadowColor);
                 }
                 else
                 {
-                    ProcessScanLine(y, dP1P2 > dP1P3 ? t.v0.Coordinates : t.v1.Coordinates, t.v2.Coordinates,
-                                        dP1P2 > dP1P3 ? t.v1.Coordinates : t.v0.Coordinates, t.v2.Coordinates, shadowColor);
+                    ProcessScanLine(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2, shadowColor);
                 }
             }
         }
@@ -83,48 +85,37 @@ namespace Renderer3D.Models.Processing
         /// <summary>
         /// Draws polygon without triangulation
         /// </summary>
-        private void RenderPolygon(Polygon p, Vector3[] vertices, Vector3[] normals, Color color, bool drawTriangles, Vector3 lightPos)
+        private void RenderPolygon(PolygonValue polygon, Color color, bool drawTriangles, Vector3 lightPos)
         {
             if (drawTriangles)
             {
-                for (int i = 0; i < p.TriangleIndexes.Length; i++)
+                for (int i = 0; i < polygon.TriangleValues.Length; i++)
                 {
-                    Triangle triangle = new Triangle
-                    {
-                        v0 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index1.Vertex], Normal = normals[p.TriangleIndexes[i].Index1.Normal] },
-                        v1 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index2.Vertex], Normal = normals[p.TriangleIndexes[i].Index2.Normal] },
-                        v2 = new Vertex { Coordinates = vertices[p.TriangleIndexes[i].Index3.Vertex], Normal = normals[p.TriangleIndexes[i].Index3.Normal] }
-                    };
-                    RenderTriangle(triangle, lightPos, color);
+                    RenderTriangle(polygon.TriangleValues[i], lightPos, color);
                 }
             }
             else
             {
                 int colorInt = color.ToInt();
-                for (int i = 0; i < p.PolygonVertices.Length; i++)
+                for (int i = 0; i < polygon.TriangleValues.Length; i++)
                 {
-                    if (i < p.PolygonVertices.Length - 1)
-                    {
-                        _bitmapWriter.DrawLine(vertices[p.PolygonVertices[i].Vertex].ToPoint(), vertices[p.PolygonVertices[i + 1].Vertex].ToPoint(), colorInt);
-                    }
-                    else
-                    {
-                        _bitmapWriter.DrawLine(vertices[p.PolygonVertices[^1].Vertex].ToPoint(), vertices[p.PolygonVertices[0].Vertex].ToPoint(), colorInt);
-                    }
+                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), colorInt);
+                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v1.Coordinates.ToPoint(), polygon.TriangleValues[i].v2.Coordinates.ToPoint(), colorInt);
+                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), colorInt);
                 }
             }
         }
 
-        public void RenderPolygons(Polygon[] polygons, Vector3[] vertices, Vector3[] normals, Color color, bool drawTriangles, Vector3 lightPos)
+        public void RenderModel(Model model, Color color, bool drawTriangles, Vector3 lightPos)
         {
             ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             try
             {
-                _ = Parallel.ForEach(Partitioner.Create(0, polygons.Length), options, Range =>
+                _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), options, Range =>
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        RenderPolygon(polygons[i], vertices, normals, color, drawTriangles, lightPos);
+                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), color, drawTriangles, lightPos);
                     }
                 });
                 Bitmap.Lock();
