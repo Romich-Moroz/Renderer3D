@@ -43,7 +43,7 @@ namespace Renderer3D.Models.Scene
             UpdateCameraUpVector();
         }
 
-        public void SetTargetToCenter(Vector4[] vertices)
+        public void CenterCamera(Vector4[] vertices)
         {
             double x = 0;
             double y = 0;
@@ -55,6 +55,7 @@ namespace Renderer3D.Models.Scene
                 z += vertices[i].Z;
             }
             CameraTarget = new Vector3 { X = (float)x / vertices.Length, Y = (float)y / vertices.Length, Z = (float)z / vertices.Length };
+            CameraPosition = new Vector3(CameraTarget.X + 50, CameraTarget.Y, 0);
             UpdateCameraUpVector();
         }
 

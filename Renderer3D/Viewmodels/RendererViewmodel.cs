@@ -69,8 +69,8 @@ namespace Renderer3D.Viewmodels
                 {
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
                     double y = currentPos.X - PreviousPosition.X;
-                    double x = currentPos.Y - PreviousPosition.Y;
-                    Scene.RotateModel(new Vector3((float)x * Sensitivity, (float)y * Sensitivity, 0));
+                    double z = PreviousPosition.Y - currentPos.Y;
+                    Scene.RotateModel(new Vector3(0, (float)y * Sensitivity, (float)z * Sensitivity));
                     PreviousPosition = currentPos;
                 }
                 UpdateFrame();

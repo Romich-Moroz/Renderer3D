@@ -75,6 +75,13 @@ namespace Renderer3D.Models.Scene
             _modelProperties.Rotation += rotation;
         }
 
+        public void RotateCamera(Vector3 rotationAngles)
+        {
+            _cameraProperties.RotateCameraX(rotationAngles.X);
+            _cameraProperties.RotateCameraY(rotationAngles.Y);
+            _cameraProperties.RotateCameraZ(rotationAngles.Z);
+        }
+
         public Scene(PixelFormat pixelFormat, int width, int height, Mesh mesh)
         {
             _bitmapProperties = new BitmapProperties(pixelFormat, width, height);
@@ -87,7 +94,7 @@ namespace Renderer3D.Models.Scene
             _modelProperties.Offset = Vector3.Zero;
             _modelProperties.Rotation = Vector3.Zero;
             _cameraProperties.CameraPosition = Vector3.One;
-            _cameraProperties.SetTargetToCenter(_mesh.OriginalModel.Vertices);
+            _cameraProperties.CenterCamera(_mesh.OriginalModel.Vertices);
             _lightingProperties.LightSourcePosition = _cameraProperties.CameraTarget + new Vector3(-5, 100, 100);
             _renderProperties.TriangleMode = false;
         }
