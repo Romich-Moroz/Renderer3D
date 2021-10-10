@@ -22,9 +22,9 @@ namespace Renderer3D.Models.Scene
         private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
         private LightingProperties _lightingProperties = new LightingProperties(Vector3.Zero);
         private CameraProperties _cameraProperties = new CameraProperties(Vector3.One, Vector3.Zero, Vector3.UnitY, (float)Math.PI / 4);
-        private RenderProperties _renderProperties = new RenderProperties(false);
-
         private Mesh _mesh;
+
+        public RenderProperties RenderProperties = new RenderProperties(RenderMode.LinesOnly);
 
         private void ProjectVertices(Matrix4x4 transformMatrix)
         {
@@ -98,7 +98,7 @@ namespace Renderer3D.Models.Scene
             _cameraProperties.CameraPosition = Vector3.One;
             _cameraProperties.CenterCamera(_mesh.OriginalModel.Vertices);
             _lightingProperties.LightSourcePosition = _cameraProperties.CameraTarget + new Vector3(-5, 100, 100);
-            _renderProperties.TriangleMode = false;
+            RenderProperties.RenderMode = RenderMode.LinesOnly;
         }
 
         public void ChangeMesh(Mesh mesh)
@@ -108,16 +108,11 @@ namespace Renderer3D.Models.Scene
             Renderer.Bitmap = _bitmapProperties.CreateFromProperties();
         }
 
-        public void ToggleTriangleMode()
-        {
-            _renderProperties.TriangleMode ^= true;
-        }
-
         /// <summary>
         /// Renders the loaded model into bitmap
         /// </summary>
         /// <returns>Rendered bitmap</returns>
-        public BitmapSource GetRenderedScene()
+        public BitmapSource GetRenderedScene(Color renderColor)
         {
 
             Debug.WriteLine($"Render started. Rendering {_mesh.TransformedModel.Polygons.Length} polygons");
@@ -130,11 +125,10 @@ namespace Renderer3D.Models.Scene
             ProjectVertices(matrixes.TransformMatrix);
             ProjectNormals(matrixes.WorldMatrix);
 
-
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Renderer.RenderModel(_mesh.TransformedModel, Colors.Gray, _renderProperties.TriangleMode, _lightingProperties.LightSourcePosition);
+            Renderer.RenderModel(_mesh.TransformedModel, renderColor, RenderProperties, _lightingProperties);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 

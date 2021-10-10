@@ -1,5 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Extensions;
+using Renderer3D.Models.Scene;
 using System;
 using System.Collections.Concurrent;
 using System.Numerics;
@@ -82,31 +83,31 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        /// <summary>
-        /// Draws polygon without triangulation
-        /// </summary>
-        private void RenderPolygon(PolygonValue polygon, Color color, bool drawTriangles, Vector3 lightPos)
+        private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
         {
-            if (drawTriangles)
+            switch(renderProperties.RenderMode)
             {
-                for (int i = 0; i < polygon.TriangleValues.Length; i++)
-                {
-                    RenderTriangle(polygon.TriangleValues[i], lightPos, color);
-                }
-            }
-            else
-            {
-                int colorInt = color.ToInt();
-                for (int i = 0; i < polygon.TriangleValues.Length; i++)
-                {
-                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), colorInt);
-                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v1.Coordinates.ToPoint(), polygon.TriangleValues[i].v2.Coordinates.ToPoint(), colorInt);
-                    _bitmapWriter.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), colorInt);
-                }
+                case RenderMode.LinesOnly:
+                    int colorInt = color.ToInt();
+                    for (int i = 0; i < polygon.TriangleValues.Length; i++)
+                    {
+                        _bitmapWriter.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), colorInt);
+                        _bitmapWriter.DrawLine(polygon.TriangleValues[i].v1.Coordinates.ToPoint(), polygon.TriangleValues[i].v2.Coordinates.ToPoint(), colorInt);
+                        _bitmapWriter.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), colorInt);
+                    }
+                    break;
+                case RenderMode.FlatShading:
+                    for (int i = 0; i < polygon.TriangleValues.Length; i++)
+                    {
+                        RenderTriangle(polygon.TriangleValues[i], lightProperties.LightSourcePosition, color);
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException("Specified render mode is not supported");
             }
         }
 
-        public void RenderModel(Model model, Color color, bool drawTriangles, Vector3 lightPos)
+        public void RenderModel(Model model, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
         {
             ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             try
@@ -115,7 +116,7 @@ namespace Renderer3D.Models.Processing
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), color, drawTriangles, lightPos);
+                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), color, renderProperties, lightProperties);
                     }
                 });
                 Bitmap.Lock();
