@@ -8,7 +8,7 @@
         /// <summary>
         /// Index in the table of vertices. Also knows an v1
         /// </summary>
-        public int Vertex;
+        public int Coordinates;
         /// <summary>
         /// Index in the table of texture pieces. Also knows as vt1
         /// </summary>

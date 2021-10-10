@@ -61,9 +61,9 @@ namespace Renderer3D.Models.Parser
             {
                 result[0] = new TriangleIndex
                 {
-                    Index1 = polygonVertices[0],
-                    Index2 = polygonVertices[1],
-                    Index3 = polygonVertices[2],
+                    VertexOneIndex = polygonVertices[0],
+                    VertexTwoIndex = polygonVertices[1],
+                    VertexThreeIndex = polygonVertices[2],
                 };
             }
             else
@@ -72,16 +72,16 @@ namespace Renderer3D.Models.Parser
                 {
                     result[i - 2] = new TriangleIndex
                     {
-                        Index1 = polygonVertices[0],
-                        Index2 = polygonVertices[i - 1],
-                        Index3 = polygonVertices[i]
+                        VertexOneIndex = polygonVertices[0],
+                        VertexTwoIndex = polygonVertices[i - 1],
+                        VertexThreeIndex = polygonVertices[i]
                     };
                 }
             }
             return result;
         }
 
-        private static Polygon ParsePolygon(string[] values, int vertexCount)
+        private static PolygonIndex ParsePolygon(string[] values, int vertexCount)
         {
             if (values[0] != "f" || values.Length < 4)
             {
@@ -107,16 +107,15 @@ namespace Renderer3D.Models.Parser
 
                 polygonVertices.Add(new VertexIndex
                 {
-                    Vertex = verticeIndex,
+                    Coordinates = verticeIndex,
                     Texture = textureIndex,
                     Normal = normalVectorIndex
                 });
             }
 
-            return new Polygon
+            return new PolygonIndex
             {
-                PolygonVertices = polygonVertices.ToArray(),
-                TriangleIndexes = SplitPolygon(polygonVertices)
+                TriangleIndices = SplitPolygon(polygonVertices)
             };
         }
 
@@ -134,7 +133,7 @@ namespace Renderer3D.Models.Parser
             List<Vector4> vertexes = new List<Vector4>();
             List<Vector3> vertexTextures = new List<Vector3>();
             List<Vector3> normalVectors = new List<Vector3>();
-            List<Polygon> polygons = new List<Polygon>();
+            List<PolygonIndex> polygons = new List<PolygonIndex>();
 
             while ((line = file.ReadLine()) != null)
             {
@@ -168,7 +167,7 @@ namespace Renderer3D.Models.Parser
                 }
             }
 
-            return new Mesh(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray());
+            return new Mesh(new Model(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray()));
         }
     }
 }
