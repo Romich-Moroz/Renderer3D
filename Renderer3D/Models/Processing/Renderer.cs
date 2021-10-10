@@ -85,7 +85,7 @@ namespace Renderer3D.Models.Processing
 
         private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
         {
-            switch(renderProperties.RenderMode)
+            switch (renderProperties.RenderMode)
             {
                 case RenderMode.LinesOnly:
                     int colorInt = color.ToInt();
