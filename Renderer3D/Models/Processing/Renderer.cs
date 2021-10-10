@@ -21,19 +21,27 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, int color)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, int color, RenderProperties renderProperties)
         {
             for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
             {
                 float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
-
                 float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
+                switch (renderProperties.RenderMode)
+                {
+                    case RenderMode.FlatShading:
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
+                        break;
+                    case RenderMode.PhongShading:
 
-                _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
+                        break;
+                    default:
+                        throw new NotImplementedException("Specified render mode is not implemented");
+                }
             }
         }
 
-        private void RasterizeTriangle(TriangleValue t, int rasterizationColor)
+        private void RasterizeTriangle(TriangleValue t, RenderProperties renderProperties, int rasterizationColor)
         {
             Calculation.SortTriangleVerticesByY(ref t);
 
@@ -51,16 +59,16 @@ namespace Renderer3D.Models.Processing
             {
                 if (y < v1.Y)
                 {
-                    ProcessScanLine(new ScanlineStruct(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2), rasterizationColor);
+                    ProcessScanLine(new ScanlineStruct(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2), rasterizationColor, renderProperties);
                 }
                 else
                 {
-                    ProcessScanLine(new ScanlineStruct(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2), rasterizationColor);
+                    ProcessScanLine(new ScanlineStruct(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2), rasterizationColor, renderProperties);
                 }
             }
         }
 
-        private void RenderFlatTriangle(TriangleValue t, LightingProperties lightProperties, Color color)
+        private void RenderFlatTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
@@ -77,10 +85,10 @@ namespace Renderer3D.Models.Processing
             float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
             int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
 
-            RasterizeTriangle(t, shadowColor);
+            RasterizeTriangle(t, renderProperties, shadowColor);
         }
 
-        private void RenderPhongTriangle(TriangleValue t, LightingProperties lightProperties, Color color)
+        private void RenderPhongTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
@@ -97,7 +105,7 @@ namespace Renderer3D.Models.Processing
             float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
             int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
 
-            RasterizeTriangle(t, shadowColor);
+            RasterizeTriangle(t, renderProperties, shadowColor);
         }
 
         private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
@@ -116,13 +124,13 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.FlatShading:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RenderFlatTriangle(polygon.TriangleValues[i], lightProperties, color);
+                        RenderFlatTriangle(polygon.TriangleValues[i], lightProperties, renderProperties, color);
                     }
                     break;
                 case RenderMode.PhongShading:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RenderPhongTriangle(polygon.TriangleValues[i], lightProperties, color);
+                        RenderPhongTriangle(polygon.TriangleValues[i], lightProperties, renderProperties, color);
                     }
                     break;
                 default:
