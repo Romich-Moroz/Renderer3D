@@ -9,9 +9,15 @@ namespace Renderer3D.Models.Scene
         /// </summary>
         public RenderMode RenderMode { get; set; }
 
+        /// <summary>
+        /// Parameter for normal interpolation (0;1)
+        /// </summary>
+        public float InterpolationParameter { get; set; }
+
         public RenderProperties(RenderMode renderMode)
         {
             RenderMode = renderMode;
+            InterpolationParameter = 0.01f;
         }
     }
 }

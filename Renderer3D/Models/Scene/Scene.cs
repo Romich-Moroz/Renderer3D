@@ -20,7 +20,7 @@ namespace Renderer3D.Models.Scene
 
         private BitmapProperties _bitmapProperties = new BitmapProperties(PixelFormats.Bgr32, 800, 600);
         private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
-        private LightingProperties _lightingProperties = new LightingProperties(Vector3.Zero);
+        private LightingProperties _lightingProperties = new LightingProperties(Vector3.Zero, 1);
         private CameraProperties _cameraProperties = new CameraProperties(Vector3.One, Vector3.Zero, Vector3.UnitY, (float)Math.PI / 4);
         private Mesh _mesh;
 

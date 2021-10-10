@@ -6,7 +6,7 @@ using System.Windows.Media;
 
 namespace Renderer3D.Models.Processing
 {
-    public static class Processing
+    public static class Calculation
     {
         public static float Clamp(float value, float min = 0, float max = 1)
         {
@@ -30,9 +30,8 @@ namespace Renderer3D.Models.Processing
             return min + (max - min) * Clamp(gradient);
         }
 
-        public static float ComputeNDotL(Vector3 vertex, Vector3 normal, Vector3 lightPosition)
+        public static float ComputeNDotL(Vector3 lightDirection, Vector3 normal)
         {
-            Vector3 lightDirection = lightPosition - vertex;
             return Math.Max(0, -Vector3.Dot(Vector3.Normalize(normal), Vector3.Normalize(lightDirection)));
         }
 
@@ -81,6 +80,11 @@ namespace Renderer3D.Models.Processing
                 dP1P3 = 0;
             }
             return (dP1P2, dP1P3);
+        }
+
+        public static Vector3 InterpolateNormal(Vector3 normal1, Vector3 normal2, float interpolationParameter)
+        {
+            return (1 - interpolationParameter) * normal1 + interpolationParameter * normal2;
         }
 
     }

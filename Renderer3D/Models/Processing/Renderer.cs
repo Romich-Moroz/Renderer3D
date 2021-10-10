@@ -21,35 +21,28 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, int color)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, int color)
         {
-            float gradient1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1;
-            float gradient2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1;
-
-            int sx = (int)Processing.Interpolate(pa.X, pb.X, gradient1);
-            int ex = (int)Processing.Interpolate(pc.X, pd.X, gradient2);
-
-            float z1 = Processing.Interpolate(pa.Z, pb.Z, gradient1);
-            float z2 = Processing.Interpolate(pc.Z, pd.Z, gradient2);
-
-            for (int x = sx; x < ex; x++)
+            for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
             {
-                float gradient = (x - sx) / (float)(ex - sx);
+                float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
 
-                float z = Processing.Interpolate(z1, z2, gradient);
+                float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
 
-                _bitmapWriter.DrawPixel(x, y, z, color);
+                _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
             }
         }
 
         private void RasterizeTriangle(TriangleValue t, int rasterizationColor)
         {
+            Calculation.SortTriangleVerticesByY(ref t);
+
             Vector3 v0 = t.v0.Coordinates.ToV3();
             Vector3 v1 = t.v1.Coordinates.ToV3();
             Vector3 v2 = t.v2.Coordinates.ToV3();
 
             double dP1P2, dP1P3;
-            (dP1P2, dP1P3) = Processing.GetInverseSlopes(v0, v1, v2);
+            (dP1P2, dP1P3) = Calculation.GetInverseSlopes(v0, v1, v2);
 
             int min = (int)v0.Y > 0 ? (int)v0.Y : 0;
             int max = (int)v2.Y < _bitmapWriter.Height ? (int)v2.Y : _bitmapWriter.Width;
@@ -58,23 +51,21 @@ namespace Renderer3D.Models.Processing
             {
                 if (y < v1.Y)
                 {
-                    ProcessScanLine(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2, rasterizationColor);
+                    ProcessScanLine(new ScanlineStruct(y, v0, dP1P2 > dP1P3 ? v2 : v1, v0, dP1P2 > dP1P3 ? v1 : v2), rasterizationColor);
                 }
                 else
                 {
-                    ProcessScanLine(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2, rasterizationColor);
+                    ProcessScanLine(new ScanlineStruct(y, dP1P2 > dP1P3 ? v0 : v1, v2, dP1P2 > dP1P3 ? v1 : v0, v2), rasterizationColor);
                 }
             }
         }
 
-        private void RenderTriangle(TriangleValue t, Vector3 lightPos, Color color)
+        private void RenderFlatTriangle(TriangleValue t, LightingProperties lightProperties, Color color)
         {
-            if (Processing.IsTriangleInvisible(t))
+            if (Calculation.IsTriangleInvisible(t))
             {
                 return;
             }
-
-            Processing.SortTriangleVerticesByY(ref t);
 
             Vector3 v0 = t.v0.Coordinates.ToV3();
             Vector3 v1 = t.v1.Coordinates.ToV3();
@@ -83,8 +74,28 @@ namespace Renderer3D.Models.Processing
             Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
             Vector3 centerPoint = (v0 + v1 + v2) / 3;
 
-            float ndotl = Processing.ComputeNDotL(centerPoint, vnFace, lightPos);
-            int shadowColor = Processing.MultiplyColorByFloat(color, ndotl);
+            float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
+            int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
+
+            RasterizeTriangle(t, shadowColor);
+        }
+
+        private void RenderPhongTriangle(TriangleValue t, LightingProperties lightProperties, Color color)
+        {
+            if (Calculation.IsTriangleInvisible(t))
+            {
+                return;
+            }
+
+            Vector3 v0 = t.v0.Coordinates.ToV3();
+            Vector3 v1 = t.v1.Coordinates.ToV3();
+            Vector3 v2 = t.v2.Coordinates.ToV3();
+
+            Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
+            Vector3 centerPoint = (v0 + v1 + v2) / 3;
+
+            float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
+            int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
 
             RasterizeTriangle(t, shadowColor);
         }
@@ -105,7 +116,13 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.FlatShading:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RenderTriangle(polygon.TriangleValues[i], lightProperties.LightSourcePosition, color);
+                        RenderFlatTriangle(polygon.TriangleValues[i], lightProperties, color);
+                    }
+                    break;
+                case RenderMode.PhongShading:
+                    for (int i = 0; i < polygon.TriangleValues.Length; i++)
+                    {
+                        RenderPhongTriangle(polygon.TriangleValues[i], lightProperties, color);
                     }
                     break;
                 default:
