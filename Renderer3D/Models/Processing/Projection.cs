@@ -49,22 +49,21 @@ namespace Renderer3D.Models.Processing
                                     Matrix4x4.CreateRotationY(modelProperties.Rotation.Y) *
                                     Matrix4x4.CreateRotationZ(modelProperties.Rotation.Z) *
                                     Matrix4x4.CreateTranslation(modelProperties.Offset);
-            Matrix4x4 viewMatrix = worldMatrix * Matrix4x4.CreateLookAt(cameraProperties.CameraPosition, cameraProperties.CameraTarget, cameraProperties.CameraUpVector);
-            Matrix4x4 perspectiveMatrix = viewMatrix * Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, bitmapProperties.AspectRatio, 1, 100);
+            Matrix4x4 viewMatrix = Matrix4x4.CreateLookAt(cameraProperties.CameraPosition, cameraProperties.CameraTarget, cameraProperties.CameraUpVector);
+            Matrix4x4 perspectiveMatrix = Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, bitmapProperties.AspectRatio, 1, 100);
             Matrix4x4 viewportMatrix = CreateViewportMatrix(bitmapProperties.Width, bitmapProperties.Height);
 
             return new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
         }
 
-        public static Vector4 ProjectVertex(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix, Vector4 vertex)
+        public static Vector4 ProjectVertex(Matrix4x4 transformMatrix, Vector4 vertex)
         {
-            return Vector4.Transform(PerspectiveDivide(Vector4.Transform(vertex, perspectiveMatrix)), viewportMatrix);
+            return PerspectiveDivide(Vector4.Transform(vertex, transformMatrix));
         }
 
-        public static Vector3 ProjectNormal(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix, Vector3 normal)
+        public static Vector3 ProjectNormal(Matrix4x4 worldMatrix, Vector3 normal)
         {
-            Vector3 result = Vector3.Transform(Vector3.Transform(normal, viewMatrix), viewportMatrix);
-            return new Vector3(result.X, result.Y, result.Z);
+            return Vector3.TransformNormal(normal, worldMatrix);
         }
     }
 }

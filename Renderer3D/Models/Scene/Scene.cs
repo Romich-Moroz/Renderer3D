@@ -26,24 +26,26 @@ namespace Renderer3D.Models.Scene
 
         private Mesh _mesh;
 
-        private void ProjectVertices(Matrix4x4 perspectiveMatrix, Matrix4x4 viewportMatrix)
+        private void ProjectVertices(Matrix4x4 transformMatrix)
         {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Vertices.Length), Range =>
+            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Vertices.Length), options, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedModel.Vertices[i] = Projection.ProjectVertex(perspectiveMatrix, viewportMatrix, _mesh.OriginalModel.Vertices[i]);
+                    _mesh.TransformedModel.Vertices[i] = Projection.ProjectVertex(transformMatrix, _mesh.OriginalModel.Vertices[i]);
                 }
             });
         }
 
-        private void ProjectNormals(Matrix4x4 viewMatrix, Matrix4x4 viewportMatrix)
+        private void ProjectNormals(Matrix4x4 worldMatrix)
         {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Normals.Length), Range =>
+            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Normals.Length), options, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedModel.Normals[i] = Projection.ProjectNormal(viewMatrix, viewportMatrix, _mesh.OriginalModel.Normals[i]);
+                    _mesh.TransformedModel.Normals[i] = Projection.ProjectNormal(worldMatrix, _mesh.OriginalModel.Normals[i]);
                 }
             });
         }
@@ -125,8 +127,8 @@ namespace Renderer3D.Models.Scene
             Stopwatch.Restart();
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
-            ProjectVertices(matrixes.PerspectiveMatrix, matrixes.ViewportMatrix);
-            ProjectNormals(matrixes.ViewMatrix, matrixes.ViewportMatrix);
+            ProjectVertices(matrixes.TransformMatrix);
+            ProjectNormals(matrixes.WorldMatrix);
 
 
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
