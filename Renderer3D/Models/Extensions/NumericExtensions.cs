@@ -25,5 +25,10 @@ namespace Renderer3D.Models.Extensions
         {
             return (color.R << 16) | (color.G << 8) | (color.B << 0);
         }
+
+        public static Color ToColor(this int color)
+        {
+            return Color.FromRgb((byte)((color >> 16) & 0xff), (byte)((color >> 8) & 0xff), (byte)(color & 0xff));
+        }
     }
 }

@@ -49,7 +49,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private bool DrawPixel(int x, int y, int color, bool useDepthBuffer = false, float z = 0)
+        private DrawError DrawPixel(int x, int y, int color, bool useDepthBuffer = false, float z = 0)
         {
             if (x >= 0 && y >= 0 && x < Width && y < Height)
             {
@@ -65,7 +65,7 @@ namespace Renderer3D.Models.Processing
                     {
                         if (_depthBuffer[index] < z)
                         {
-                            return false;
+                            return DrawError.DepthBufferOverlap;
                         }
                         _depthBuffer[index] = z;
                     }
@@ -82,9 +82,9 @@ namespace Renderer3D.Models.Processing
                         _lockBuffer[index].Exit(false);
                     }
                 }
-                return true;
+                return DrawError.Success;
             }
-            return false;
+            return DrawError.OutOfBounds;
         }
 
         public void Clear()
@@ -114,12 +114,12 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public bool DrawPixel(int x, int y, float z, int color)
+        public DrawError DrawPixel(int x, int y, float z, int color)
         {
             return DrawPixel(x, y, color, true, z);
         }
 
-        public bool DrawPixel(int x, int y, int color)
+        public DrawError DrawPixel(int x, int y, int color)
         {
             return DrawPixel(x, y, color, false, 0);
         }
@@ -132,7 +132,7 @@ namespace Renderer3D.Models.Processing
             {
                 double x = x1.X + i * dda.DeltaX;
                 double y = x1.Y + i * dda.DeltaY;
-                if (!DrawPixel((int)x, (int)y, color))
+                if (DrawPixel((int)x, (int)y, color) == DrawError.OutOfBounds)
                 {
                     return;
                 }

@@ -17,6 +17,8 @@ namespace Renderer3D.Viewmodels
     {
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
 
+        private readonly Color RenderColor = Colors.Gray;
+
         public BitmapSource Frame { get; private set; }
         public ICommand MouseMoveCommand { get; }
         public ICommand MouseWheelCommand { get; }
@@ -43,7 +45,7 @@ namespace Renderer3D.Viewmodels
 
         private void UpdateFrame()
         {
-            Frame = Scene.GetRenderedScene();
+            Frame = Scene.GetRenderedScene(RenderColor);
         }
 
         public RendererViewmodel(Window window, PixelFormat pixelFormat)
@@ -108,7 +110,12 @@ namespace Renderer3D.Viewmodels
 
                 if (args.Key == Key.T)
                 {
-                    Scene.ToggleTriangleMode();
+                    Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.FlatShading ? RenderMode.LinesOnly : RenderMode.FlatShading;
+                }
+
+                if (args.Key == Key.P)
+                {
+                    Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.PhongShading ? RenderMode.LinesOnly : RenderMode.PhongShading;
                 }
 
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)
@@ -135,7 +142,7 @@ namespace Renderer3D.Viewmodels
             }, null);
 
             //Initial render
-            Frame = Scene.GetRenderedScene();
+            Frame = Scene.GetRenderedScene(RenderColor);
         }
     }
 }

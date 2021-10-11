@@ -8,10 +8,12 @@ namespace Renderer3D.Models.Scene
         /// Position of the light source
         /// </summary>
         public Vector3 LightSourcePosition { get; set; }
+        public float Intensity { get; set; }
 
-        public LightingProperties(Vector3 lightSourcePosition)
+        public LightingProperties(Vector3 lightSourcePosition, float intensity)
         {
             LightSourcePosition = lightSourcePosition;
+            Intensity = intensity;
         }
     }
 }
