@@ -14,6 +14,7 @@ namespace Renderer3D.Models.Processing
     public class Renderer
     {
         private readonly BitmapWriter _bitmapWriter = new BitmapWriter();
+        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
         public WriteableBitmap Bitmap
         {
@@ -34,10 +35,18 @@ namespace Renderer3D.Models.Processing
                         _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, colorInt);
                         break;
                     case RenderMode.PhongShading:
-                        //var n = Vector3.Normalize(Calculation.InterpolateNormal(scanlineStruct.Pa.Normal, scanlineStruct.Pb.Normal, renderProperties.InterpolationParameter));
-                        //float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - new Vector3(x, scanlineStruct.Y, z), n) * lightProperties.Intensity;
-                        //int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
-                        //_bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, shadowColor);
+                        Vector3 bary = Calculation.GetBarycentricCoordinates
+                        (
+                            scanlineStruct.Triangle.v0.Coordinates,
+                            scanlineStruct.Triangle.v1.Coordinates,
+                            scanlineStruct.Triangle.v2.Coordinates,
+                            new Vector3(x, scanlineStruct.Y, z)
+                        );
+                        Vector3 n = Vector3.Normalize(scanlineStruct.Triangle.v0.Normal * bary.X + scanlineStruct.Triangle.v1.Normal * bary.Y + scanlineStruct.Triangle.v2.Normal * bary.Z);
+
+                        float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - new Vector3(x, scanlineStruct.Y, z), n) * lightProperties.Intensity;
+                        int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, shadowColor);
                         break;
                     default:
                         throw new NotImplementedException("Specified render mode is not implemented");
@@ -65,12 +74,8 @@ namespace Renderer3D.Models.Processing
                 return;
             }
 
-            Vector3 v0 = t.v0.Coordinates.ToV3();
-            Vector3 v1 = t.v1.Coordinates.ToV3();
-            Vector3 v2 = t.v2.Coordinates.ToV3();
-
             Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
-            Vector3 centerPoint = (v0 + v1 + v2) / 3;
+            Vector3 centerPoint = (t.v0.Coordinates + t.v1.Coordinates + t.v2.Coordinates) / 3;
 
             float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
             int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
@@ -120,10 +125,10 @@ namespace Renderer3D.Models.Processing
 
         public void RenderModel(Model model, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
         {
-            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
             try
             {
-                _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), options, Range =>
+                _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), _options, Range =>
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {

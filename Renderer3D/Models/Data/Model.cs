@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Renderer3D.Models.Extensions;
+using System.Numerics;
 
 namespace Renderer3D.Models.Data
 {
@@ -43,19 +44,19 @@ namespace Renderer3D.Models.Data
                 {
                     v0 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexOneIndex.Coordinates],
+                        Coordinates = Vertices[p.TriangleIndices[i].VertexOneIndex.Coordinates].ToV3(),
                         Normal = Normals[p.TriangleIndices[i].VertexOneIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexOneIndex.Texture]
                     },
                     v1 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexTwoIndex.Coordinates],
+                        Coordinates = Vertices[p.TriangleIndices[i].VertexTwoIndex.Coordinates].ToV3(),
                         Normal = Normals[p.TriangleIndices[i].VertexTwoIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexTwoIndex.Texture]
                     },
                     v2 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexThreeIndex.Coordinates],
+                        Coordinates = Vertices[p.TriangleIndices[i].VertexThreeIndex.Coordinates].ToV3(),
                         Normal = Normals[p.TriangleIndices[i].VertexThreeIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexThreeIndex.Texture]
                     },

@@ -38,7 +38,7 @@ namespace Renderer3D.Models.Processing
         public static bool IsTriangleInvisible(TriangleValue t)
         {
             return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) ||
-                (Vector3.Cross(t.v1.Coordinates.ToV3() - t.v0.Coordinates.ToV3(), t.v2.Coordinates.ToV3() - t.v0.Coordinates.ToV3()).Z >= 0);
+                (Vector3.Cross(t.v1.Coordinates - t.v0.Coordinates, t.v2.Coordinates - t.v0.Coordinates).Z >= 0);
         }
 
         public static void SortTriangleVerticesByY(ref TriangleValue t)
@@ -59,7 +59,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public static (double, double) GetInverseSlopes(Vector4 v0, Vector4 v1, Vector4 v2)
+        public static (double, double) GetInverseSlopes(Vector3 v0, Vector3 v1, Vector3 v2)
         {
             double dP1P2, dP1P3;
             if (v1.Y - v0.Y > 0)
@@ -87,5 +87,22 @@ namespace Renderer3D.Models.Processing
             return (1 - interpolationParameter) * normal1 + interpolationParameter * normal2;
         }
 
+        public static Vector3 GetBarycentricCoordinates(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
+        {
+            float sabp = Vector3.Cross(p - a, p - b).Length();
+            float sacp = Vector3.Cross(p - a, p - c).Length();
+            float denom = Vector3.Cross(a - b, a - c).Length();
+
+            float w = sabp / denom;
+            float v = sacp / denom;
+            float u = 1 - w - v;
+
+            return new Vector3
+            {
+                X = u,
+                Y = v,
+                Z = w
+            };
+        }
     }
 }
