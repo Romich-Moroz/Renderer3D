@@ -1,5 +1,5 @@
 ﻿using Renderer3D.Models.Data;
-using Renderer3D.Models.Extensions;
+using Renderer3D.Models.Scene;
 using System;
 using System.Numerics;
 using System.Windows.Media;
@@ -13,9 +13,12 @@ namespace Renderer3D.Models.Processing
             return Math.Max(min, Math.Min(value, max));
         }
 
-        public static int MultiplyColorByFloat(Color color, float multiplier)
+        public static Color Multiply(this Color color, float mult)
         {
-            return Color.FromRgb((byte)(color.R * multiplier), (byte)(color.G * multiplier), (byte)(color.B * multiplier)).ToInt();
+            color.R = (byte)(color.R * mult);
+            color.G = (byte)(color.G * mult);
+            color.B = (byte)(color.B * mult);
+            return color;
         }
 
         /// <summary>
@@ -82,11 +85,6 @@ namespace Renderer3D.Models.Processing
             return (dP1P2, dP1P3);
         }
 
-        public static Vector3 InterpolateNormal(Vector3 normal1, Vector3 normal2, float interpolationParameter)
-        {
-            return (1 - interpolationParameter) * normal1 + interpolationParameter * normal2;
-        }
-
         public static Vector3 GetBarycentricCoordinates(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
         {
             float sabp = Vector3.Cross(p - a, p - b).Length();
@@ -103,6 +101,27 @@ namespace Renderer3D.Models.Processing
                 Y = v,
                 Z = w
             };
+        }
+
+        public static Vector3 GetAmbientLightingColor(LightingProperties lightingProperties)
+        {
+            return lightingProperties.Ka * lightingProperties.Ia;
+        }
+        public static Vector3 GetDiffuseLightingColor(LightingProperties lightingProperties, Vector3 point, Vector3 normal)
+        {
+            return lightingProperties.Id * ComputeNDotL(lightingProperties.LightSourcePosition - point, normal) * lightingProperties.Kd;
+        }
+
+        public static Vector3 GetReflectionLightingColor(CameraProperties cameraProperties, LightingProperties lightingProperties, Vector3 point, Vector3 normal)
+        {
+            Vector3 V = Vector3.Normalize(cameraProperties.CameraPosition - point);
+            Vector3 L = Vector3.Normalize(lightingProperties.LightSourcePosition - point);
+            Vector3 R = L - 2 * ComputeNDotL(L, normal) * normal;
+
+            float dot = Math.Abs(Vector3.Dot(R, V));
+            float pow = (float)Math.Pow(dot, lightingProperties.ShininessCoefficient);
+
+            return lightingProperties.Is * pow * lightingProperties.Ks;
         }
     }
 }

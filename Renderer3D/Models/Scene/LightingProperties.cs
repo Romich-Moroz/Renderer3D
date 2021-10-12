@@ -8,12 +8,32 @@ namespace Renderer3D.Models.Scene
         /// Position of the light source
         /// </summary>
         public Vector3 LightSourcePosition { get; set; }
-        public float Intensity { get; set; }
+        public float LightSourceIntensity { get; set; }
 
-        public LightingProperties(Vector3 lightSourcePosition, float intensity)
+        public float Ka { get; set; }
+        public Vector3 Ia { get; set; }
+
+        public float Kd { get; set; }
+        public Vector3 Id { get; set; }
+
+        public float Ks { get; set; }
+        public Vector3 Is { get; set; }
+        public float ShininessCoefficient { get; set; }
+
+
+        public LightingProperties(Vector3 lightSourcePosition, float lightSourceIntensity, float ka,
+                                  Vector3 ia, Vector3 id, float kd,
+                                  Vector3 @is, float ks, float shininessCoefficient)
         {
             LightSourcePosition = lightSourcePosition;
-            Intensity = intensity;
+            LightSourceIntensity = lightSourceIntensity;
+            Ka = ka;
+            Ia = ia;
+            Id = id;
+            Kd = kd;
+            Is = @is;
+            Ks = ks;
+            ShininessCoefficient = shininessCoefficient;
         }
     }
 }
