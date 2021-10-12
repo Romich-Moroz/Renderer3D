@@ -108,7 +108,7 @@ namespace Renderer3D.Viewmodels
                     Scene.ResetState();
                 }
 
-                if (args.Key == Key.T)
+                if (args.Key == Key.F)
                 {
                     Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.FlatShading ? RenderMode.LinesOnly : RenderMode.FlatShading;
                 }

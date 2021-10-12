@@ -22,7 +22,7 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, CameraProperties cameraProperties, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
         {
             int colorInt = color.ToInt();
             for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
@@ -35,18 +35,28 @@ namespace Renderer3D.Models.Processing
                         _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, colorInt);
                         break;
                     case RenderMode.PhongShading:
+                        Vector3 point = new Vector3(x, scanlineStruct.Y, z);
                         Vector3 bary = Calculation.GetBarycentricCoordinates
                         (
                             scanlineStruct.Triangle.v0.Coordinates,
                             scanlineStruct.Triangle.v1.Coordinates,
                             scanlineStruct.Triangle.v2.Coordinates,
-                            new Vector3(x, scanlineStruct.Y, z)
+                            point
                         );
                         Vector3 n = Vector3.Normalize(scanlineStruct.Triangle.v0.Normal * bary.X + scanlineStruct.Triangle.v1.Normal * bary.Y + scanlineStruct.Triangle.v2.Normal * bary.Z);
+                        Vector3 ambient = Calculation.GetAmbientLightingColor(lightProperties);
+                        Vector3 diffuse = Calculation.GetDiffuseLightingColor(lightProperties, point, n);
+                        Vector3 reflection = Calculation.GetReflectionLightingColor(cameraProperties, lightProperties, point, n);
 
-                        float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - new Vector3(x, scanlineStruct.Y, z), n) * lightProperties.Intensity;
-                        int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
-                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, shadowColor);
+                        Vector3 intensity = ambient + diffuse + reflection;
+                        intensity.X = intensity.X > 255 ? 255 : intensity.X;
+                        intensity.Y = intensity.Y > 255 ? 255 : intensity.Y;
+                        intensity.Z = intensity.Z > 255 ? 255 : intensity.Z;
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, Color.FromRgb((byte)intensity.X, (byte)intensity.Y, (byte)intensity.Z).ToInt());
+
+                        //float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - new Vector3(x, scanlineStruct.Y, z), n) * lightProperties.LightSourceIntensity;
+                        //_bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color.Multiply(ndotl).ToInt());
+
                         break;
                     default:
                         throw new NotImplementedException("Specified render mode is not implemented");
@@ -54,7 +64,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RasterizeTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color = default)
+        private void RasterizeTriangle(TriangleValue t, CameraProperties cameraProperties, LightingProperties lightProperties, RenderProperties renderProperties, Color color = default)
         {
             Calculation.SortTriangleVerticesByY(ref t);
 
@@ -63,7 +73,7 @@ namespace Renderer3D.Models.Processing
 
             for (int y = min; y <= max; y++)
             {
-                ProcessScanLine(new ScanlineStruct(y, t), lightProperties, renderProperties, color);
+                ProcessScanLine(new ScanlineStruct(y, t), cameraProperties, lightProperties, renderProperties, color);
             }
         }
 
@@ -77,23 +87,22 @@ namespace Renderer3D.Models.Processing
             Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
             Vector3 centerPoint = (t.v0.Coordinates + t.v1.Coordinates + t.v2.Coordinates) / 3;
 
-            float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.Intensity;
-            int shadowColor = Calculation.MultiplyColorByFloat(color, ndotl);
+            float ndotl = Calculation.ComputeNDotL(lightProperties.LightSourcePosition - centerPoint, vnFace) * lightProperties.LightSourceIntensity;
 
-            RasterizeTriangle(t, lightProperties, renderProperties, shadowColor.ToColor());
+            RasterizeTriangle(t, default, lightProperties, renderProperties, color.Multiply(ndotl));
         }
 
-        private void RenderPhongTriangle(TriangleValue t, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
+        private void RenderPhongTriangle(TriangleValue t, CameraProperties cameraProperties, LightingProperties lightProperties, RenderProperties renderProperties, Color color)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
                 return;
             }
 
-            RasterizeTriangle(t, lightProperties, renderProperties, color);
+            RasterizeTriangle(t, cameraProperties, lightProperties, renderProperties, color);
         }
 
-        private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
+        private void RenderPolygon(PolygonValue polygon, Color color, RenderProperties renderProperties, LightingProperties lightProperties, CameraProperties cameraProperties)
         {
             switch (renderProperties.RenderMode)
             {
@@ -115,7 +124,7 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.PhongShading:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RenderPhongTriangle(polygon.TriangleValues[i], lightProperties, renderProperties, color);
+                        RenderPhongTriangle(polygon.TriangleValues[i], cameraProperties, lightProperties, renderProperties, color);
                     }
                     break;
                 default:
@@ -123,7 +132,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public void RenderModel(Model model, Color color, RenderProperties renderProperties, LightingProperties lightProperties)
+        public void RenderModel(Model model, Color color, RenderProperties renderProperties, LightingProperties lightProperties, CameraProperties cameraProperties)
         {
 
             try
@@ -132,7 +141,7 @@ namespace Renderer3D.Models.Processing
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)
                     {
-                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), color, renderProperties, lightProperties);
+                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), color, renderProperties, lightProperties, cameraProperties);
                     }
                 });
                 Bitmap.Lock();

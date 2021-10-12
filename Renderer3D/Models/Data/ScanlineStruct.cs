@@ -4,16 +4,16 @@ namespace Renderer3D.Models.Data
 {
     public struct ScanlineStruct
     {
-        public int Y { get; set; }
-        public float Gradient1 { get; set; }
-        public float Gradient2 { get; set; }
+        public int Y;
+        public float Gradient1;
+        public float Gradient2;
 
-        public int StartX { get; set; }
-        public int EndX { get; set; }
-        public float Z1 { get; set; }
-        public float Z2 { get; set; }
+        public int StartX;
+        public int EndX;
+        public float Z1;
+        public float Z2;
 
-        public TriangleValue Triangle { get; set; }
+        public TriangleValue Triangle;
 
         public ScanlineStruct(int y, TriangleValue t)
         {

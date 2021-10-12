@@ -17,10 +17,24 @@ namespace Renderer3D.Models.Scene
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly Renderer Renderer = new Renderer();
+        private static readonly Vector3 Gray = new Vector3(0x80, 0x80, 0x80);
+        private static readonly Vector3 White = new Vector3(0xff, 0xff, 0xff);
+        private static readonly Vector3 Color = new Vector3(0, 0, 0xff);
 
         private BitmapProperties _bitmapProperties = new BitmapProperties(PixelFormats.Bgr32, 800, 600);
         private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
-        private LightingProperties _lightingProperties = new LightingProperties(Vector3.Zero, 1);
+        private LightingProperties _lightingProperties = new LightingProperties
+        (
+            lightSourcePosition: Vector3.Zero,
+            lightSourceIntensity: 1,
+            ia: White,
+            id: Color,
+            @is: White,
+            ka: 0.1f,
+            kd: 0.2f,
+            ks: 0.3f,
+            shininessCoefficient: 1f
+        );
         private CameraProperties _cameraProperties = new CameraProperties(Vector3.One, Vector3.Zero, Vector3.UnitY, (float)Math.PI / 4);
         private Mesh _mesh;
 
@@ -128,7 +142,7 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Renderer.RenderModel(_mesh.TransformedModel, renderColor, RenderProperties, _lightingProperties);
+            Renderer.RenderModel(_mesh.TransformedModel, renderColor, RenderProperties, _lightingProperties, _cameraProperties);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 
