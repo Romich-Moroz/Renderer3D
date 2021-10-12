@@ -116,9 +116,9 @@ namespace Renderer3D.Models.Processing
         {
             Vector3 V = Vector3.Normalize(cameraProperties.CameraPosition - point);
             Vector3 L = Vector3.Normalize(lightingProperties.LightSourcePosition - point);
-            Vector3 R = L - 2 * ComputeNDotL(L, normal) * normal;
+            Vector3 H = Vector3.Normalize(L + V);
 
-            float dot = Math.Abs(Vector3.Dot(R, V));
+            float dot = Math.Abs(Vector3.Dot(normal, H));
             float pow = (float)Math.Pow(dot, lightingProperties.ShininessCoefficient);
 
             return lightingProperties.Is * pow * lightingProperties.Ks;

@@ -19,7 +19,8 @@ namespace Renderer3D.Models.Scene
         private readonly Renderer Renderer = new Renderer();
         private static readonly Vector3 Gray = new Vector3(0x80, 0x80, 0x80);
         private static readonly Vector3 White = new Vector3(0xff, 0xff, 0xff);
-        private static readonly Vector3 Color = new Vector3(0, 0, 0xff);
+        private static readonly Vector3 Color = new Vector3(0xD4, 0XAF, 0x37);
+        private static readonly Vector3 Specular = new Vector3(0xFF, 0xCF, 0x42);
 
         private BitmapProperties _bitmapProperties = new BitmapProperties(PixelFormats.Bgr32, 800, 600);
         private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
@@ -27,13 +28,13 @@ namespace Renderer3D.Models.Scene
         (
             lightSourcePosition: Vector3.Zero,
             lightSourceIntensity: 1,
-            ia: White,
+            ia: Color,
             id: Color,
-            @is: White,
+            @is: Specular,
             ka: 0.1f,
-            kd: 0.2f,
-            ks: 0.3f,
-            shininessCoefficient: 1f
+            kd: 1f,
+            ks: 2f,
+            shininessCoefficient: 512f
         );
         private CameraProperties _cameraProperties = new CameraProperties(Vector3.One, Vector3.Zero, Vector3.UnitY, (float)Math.PI / 4);
         private Mesh _mesh;
