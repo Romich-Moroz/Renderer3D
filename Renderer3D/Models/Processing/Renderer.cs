@@ -21,9 +21,8 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, Vector3 color)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, int color)
         {
-            int colorInt = color.ToInt();
             for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
             {
                 float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
@@ -31,11 +30,16 @@ namespace Renderer3D.Models.Processing
                 switch (sceneProperties.RenderProperties.RenderMode)
                 {
                     case RenderMode.FlatShading:
-                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, colorInt);
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
                         break;
                     case RenderMode.PhongShading:
                         Vector3 point = new Vector3(x, scanlineStruct.Y, z);
-                        Vector3 bary = Calculation.GetBarycentricCoordinates
+                        Vector3 viewVector = sceneProperties.CameraProperties.CameraPosition - point;
+                        Vector3 lightVector = sceneProperties.LightingProperties.LightSourcePosition - point;
+                        Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
+
+
+                        Vector3 bary = Calculation.GetFastBarycentricCoordinates
                         (
                             scanlineStruct.Triangle.v0.Coordinates,
                             scanlineStruct.Triangle.v1.Coordinates,
@@ -43,15 +47,16 @@ namespace Renderer3D.Models.Processing
                             point
                         );
                         Vector3 n = Vector3.Normalize(scanlineStruct.Triangle.v0.Normal * bary.X + scanlineStruct.Triangle.v1.Normal * bary.Y + scanlineStruct.Triangle.v2.Normal * bary.Z);
-                        Vector3 ambient = Calculation.GetAmbientLightingColor(sceneProperties.LightingProperties);
-                        Vector3 diffuse = Calculation.GetDiffuseLightingColor(sceneProperties.LightingProperties, point, n);
-                        Vector3 reflection = Calculation.GetReflectionLightingColor(sceneProperties.CameraProperties, sceneProperties.LightingProperties, point, n);
+
+                        Vector3 ambient = sceneProperties.LightingProperties.AmbientIntensity;
+                        Vector3 diffuse = Calculation.GetDiffuseLightingColor(sceneProperties.LightingProperties, lightVector, n);
+                        Vector3 reflection = Calculation.GetReflectionLightingColor(sceneProperties.LightingProperties, hVector, n);
 
                         Vector3 intensity = ambient + diffuse + reflection;
-                        intensity.X = intensity.X > 255 ? 255 : intensity.X;
-                        intensity.Y = intensity.Y > 255 ? 255 : intensity.Y;
-                        intensity.Z = intensity.Z > 255 ? 255 : intensity.Z;
-                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, intensity.ToInt());
+                        intensity.X = Math.Min(intensity.X, 255);
+                        intensity.Y = Math.Min(intensity.Y, 255);
+                        intensity.Z = Math.Min(intensity.Z, 255);
+                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, intensity.ToColorInt());
 
                         break;
                     default:
@@ -60,7 +65,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, Vector3 color)
+        private void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, int color)
         {
             Calculation.SortTriangleVerticesByY(ref t);
 
@@ -85,7 +90,7 @@ namespace Renderer3D.Models.Processing
 
             float ndotl = Calculation.ComputeNDotL(sceneProperties.LightingProperties.LightSourcePosition - centerPoint, vnFace) * sceneProperties.LightingProperties.LightSourceIntensity;
 
-            RasterizeTriangle(t, sceneProperties, sceneProperties.RenderProperties.RenderFallbackColor * ndotl);
+            RasterizeTriangle(t, sceneProperties, (sceneProperties.RenderProperties.RenderFallbackColor * ndotl).ToColorInt());
         }
 
         private void RenderPhongTriangle(TriangleValue t, SceneProperties sceneProperties)

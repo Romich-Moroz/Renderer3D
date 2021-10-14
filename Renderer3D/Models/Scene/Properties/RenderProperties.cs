@@ -19,7 +19,7 @@ namespace Renderer3D.Models.Scene
             set
             {
                 _RenderFallbackColor = value;
-                _RenderFallbackColorInt = value.ToInt();
+                _RenderFallbackColorInt = value.ToColorInt();
             }
         }
         public int RenderFallbackColorInt => _RenderFallbackColorInt;
