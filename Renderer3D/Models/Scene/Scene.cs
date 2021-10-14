@@ -107,7 +107,7 @@ namespace Renderer3D.Models.Scene
         /// Renders the loaded model into bitmap
         /// </summary>
         /// <returns>Rendered bitmap</returns>
-        public BitmapSource GetRenderedScene()
+        public BitmapSource GetRenderedScene(out long renderTime)
         {
 
             Debug.WriteLine($"Render started. Rendering {_mesh.TransformedModel.Polygons.Length} polygons");
@@ -115,6 +115,7 @@ namespace Renderer3D.Models.Scene
             TransformMatrixes matrixes = Projection.GetTransformMatrixes(SceneProperties.ModelProperties, SceneProperties.CameraProperties, SceneProperties.BitmapProperties);
 
             Stopwatch.Restart();
+            renderTime = Stopwatch.ElapsedMilliseconds;
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
             ProjectVertices(matrixes.TransformMatrix);
@@ -128,6 +129,7 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 
             Debug.WriteLine("Render ended\n");
+            renderTime = Stopwatch.ElapsedMilliseconds - renderTime;
             Stopwatch.Stop();
 
             return Renderer.Bitmap;

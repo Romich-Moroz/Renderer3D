@@ -23,7 +23,10 @@ namespace Renderer3D.Models.Processing
 
         private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, int color)
         {
-            for (int x = scanlineStruct.StartX; x < scanlineStruct.EndX; x++)
+            var cls = Math.Clamp(scanlineStruct.StartX, 0, _bitmapWriter.Width);
+            var cle = Math.Clamp(scanlineStruct.EndX, 0, _bitmapWriter.Width);
+
+            for (int x = cls; x < cle; x++)
             {
                 float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
                 float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
@@ -69,8 +72,8 @@ namespace Renderer3D.Models.Processing
         {
             Calculation.SortTriangleVerticesByY(ref t);
 
-            int min = (int)t.v0.Coordinates.Y > 0 ? (int)t.v0.Coordinates.Y : 0;
-            int max = (int)t.v2.Coordinates.Y < _bitmapWriter.Height ? (int)t.v2.Coordinates.Y : _bitmapWriter.Width;
+            int min = (int)Math.Clamp(t.v0.Coordinates.Y, 0, _bitmapWriter.Height);
+            int max = (int)Math.Clamp(t.v2.Coordinates.Y, 0, _bitmapWriter.Height);
 
             for (int y = min; y <= max; y++)
             {

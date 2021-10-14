@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Renderer3D.Viewmodels" 
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         mc:Ignorable="d"
-        Title="Renderer3D" Height="450" Width="800" d:DataContext="{d:DesignInstance local:RendererViewmodel }">
+        Title="{Binding RenderTime, StringFormat=Renderer3D ({0} ms)}" Height="450" Width="800" d:DataContext="{d:DesignInstance local:RendererViewmodel }">
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="KeyDown">
             <i:InvokeCommandAction Command="{Binding KeyDownCommand}" PassEventArgsToCommand="True"/>

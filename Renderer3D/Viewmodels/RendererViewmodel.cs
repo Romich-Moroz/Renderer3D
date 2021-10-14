@@ -25,6 +25,7 @@ namespace Renderer3D.Viewmodels
 
         public BitmapSource Frame { get; private set; }
         public Point PreviousMousePosition { get; set; }
+        public long RenderTime { get; set; }
 
         private readonly List<Mesh> Meshes = new List<Mesh>
         {
@@ -39,7 +40,8 @@ namespace Renderer3D.Viewmodels
 
         private void UpdateFrame()
         {
-            Frame = Scene.GetRenderedScene();
+            Frame = Scene.GetRenderedScene(out long rt);
+            RenderTime = rt;
         }
 
         public RendererViewmodel(Window window)
@@ -141,7 +143,8 @@ namespace Renderer3D.Viewmodels
             }, null);
 
             //Initial render
-            Frame = Scene.GetRenderedScene();
+            Frame = Scene.GetRenderedScene(out long rt);
+            RenderTime = rt;
         }
     }
 }
