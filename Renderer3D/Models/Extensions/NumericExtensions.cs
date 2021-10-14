@@ -21,9 +21,9 @@ namespace Renderer3D.Models.Extensions
             return new Vector3(v.X, v.Y, v.Z);
         }
 
-        public static int ToInt(this Color color)
+        public static int ToInt(this Vector3 color)
         {
-            return (color.R << 16) | (color.G << 8) | (color.B << 0);
+            return ((int)color.X << 16) | ((int)color.Y << 8) | ((int)color.Z << 0);
         }
 
         public static Color ToColor(this int color)

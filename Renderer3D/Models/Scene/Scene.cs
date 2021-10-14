@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Scene
@@ -17,29 +16,9 @@ namespace Renderer3D.Models.Scene
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly Renderer Renderer = new Renderer();
-        private static readonly Vector3 Gray = new Vector3(0x80, 0x80, 0x80);
-        private static readonly Vector3 White = new Vector3(0xff, 0xff, 0xff);
-        private static readonly Vector3 Color = new Vector3(0xD4, 0XAF, 0x37);
-        private static readonly Vector3 Specular = new Vector3(0xFF, 0xCF, 0x42);
+        public readonly SceneProperties SceneProperties = new SceneProperties();
 
-        private BitmapProperties _bitmapProperties = new BitmapProperties(PixelFormats.Bgr32, 800, 600);
-        private ModelProperties _modelProperties = new ModelProperties(Vector3.One, Vector3.Zero, Vector3.Zero);
-        private LightingProperties _lightingProperties = new LightingProperties
-        (
-            lightSourcePosition: Vector3.Zero,
-            lightSourceIntensity: 1,
-            ia: Color,
-            id: Color,
-            @is: Specular,
-            ka: 0.1f,
-            kd: 1f,
-            ks: 2f,
-            shininessCoefficient: 512f
-        );
-        private CameraProperties _cameraProperties = new CameraProperties(Vector3.One, Vector3.Zero, Vector3.UnitY, (float)Math.PI / 4);
         private Mesh _mesh;
-
-        public RenderProperties RenderProperties = new RenderProperties(RenderMode.LinesOnly);
 
         private void ProjectVertices(Matrix4x4 transformMatrix)
         {
@@ -67,72 +46,73 @@ namespace Renderer3D.Models.Scene
 
         public void OffsetModel(Vector3 offset)
         {
-            _modelProperties.Offset += offset;
+            SceneProperties.ModelProperties.Offset += offset;
         }
 
         public void ScaleModel(Vector3 scale)
         {
-            _modelProperties.Scale += scale;
+            SceneProperties.ModelProperties.Scale += scale;
         }
 
         public void OffsetCamera(Vector3 offset)
         {
-            _cameraProperties.OffsetCamera(offset);
+            SceneProperties.CameraProperties.OffsetCamera(offset);
         }
 
         public void ResizeScene(int newWidth, int newHeight)
         {
-            _bitmapProperties.Width = newWidth;
-            _bitmapProperties.Height = newHeight;
-            Renderer.Bitmap = _bitmapProperties.CreateFromProperties();
+
+            SceneProperties.BitmapProperties.Width = newWidth;
+            SceneProperties.BitmapProperties.Height = newHeight;
+            Renderer.Bitmap = SceneProperties.BitmapProperties.CreateFromProperties();
         }
 
         public void RotateModel(Vector3 rotation)
         {
-            _modelProperties.Rotation += rotation;
+            SceneProperties.ModelProperties.Rotation += rotation;
         }
 
         public void RotateCamera(Vector3 rotationAngles)
         {
-            _cameraProperties.RotateCameraX(rotationAngles.X);
-            _cameraProperties.RotateCameraY(rotationAngles.Y);
-            _cameraProperties.RotateCameraZ(rotationAngles.Z);
+            SceneProperties.CameraProperties.RotateCameraX(rotationAngles.X);
+            SceneProperties.CameraProperties.RotateCameraY(rotationAngles.Y);
+            SceneProperties.CameraProperties.RotateCameraZ(rotationAngles.Z);
         }
 
-        public Scene(PixelFormat pixelFormat, int width, int height, Mesh mesh)
+        public Scene(int width, int height, Mesh mesh)
         {
-            _bitmapProperties = new BitmapProperties(pixelFormat, width, height);
+            SceneProperties.BitmapProperties.Width = width;
+            SceneProperties.BitmapProperties.Height = height;
             ChangeMesh(mesh);
         }
 
         public void ResetState()
         {
-            _modelProperties.Scale = Vector3.One;
-            _modelProperties.Offset = Vector3.Zero;
-            _modelProperties.Rotation = Vector3.Zero;
-            _cameraProperties.CameraPosition = Vector3.One;
-            _cameraProperties.CenterCamera(_mesh.OriginalModel.Vertices);
-            _lightingProperties.LightSourcePosition = _cameraProperties.CameraTarget + new Vector3(-5, 100, 100);
-            RenderProperties.RenderMode = RenderMode.LinesOnly;
+            SceneProperties.ModelProperties.Reset();
+            SceneProperties.RenderProperties.Reset();
+            SceneProperties.CameraProperties.Reset();
+            SceneProperties.CameraProperties.CenterCamera(_mesh.OriginalModel.Vertices);
+            SceneProperties.LightingProperties.LightSourcePosition = SceneProperties.CameraProperties.CameraTarget + new Vector3(-5, 100, 100);
+
         }
 
         public void ChangeMesh(Mesh mesh)
         {
             _mesh = mesh;
             ResetState();
-            Renderer.Bitmap = _bitmapProperties.CreateFromProperties();
+            Renderer.Bitmap = SceneProperties.BitmapProperties.CreateFromProperties();
         }
 
         /// <summary>
         /// Renders the loaded model into bitmap
         /// </summary>
         /// <returns>Rendered bitmap</returns>
-        public BitmapSource GetRenderedScene(Color renderColor)
+        public BitmapSource GetRenderedScene()
         {
 
             Debug.WriteLine($"Render started. Rendering {_mesh.TransformedModel.Polygons.Length} polygons");
             Renderer.Clear();
-            TransformMatrixes matrixes = Projection.GetTransformMatrixes(_modelProperties, _cameraProperties, _bitmapProperties);
+            TransformMatrixes matrixes = Projection.GetTransformMatrixes(SceneProperties.ModelProperties, SceneProperties.CameraProperties, SceneProperties.BitmapProperties);
 
             Stopwatch.Restart();
             long prevMs = Stopwatch.ElapsedMilliseconds;
@@ -143,7 +123,7 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Renderer.RenderModel(_mesh.TransformedModel, renderColor, RenderProperties, _lightingProperties, _cameraProperties);
+            Renderer.RenderModel(_mesh.TransformedModel, SceneProperties);
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 
