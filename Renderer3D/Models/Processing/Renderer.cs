@@ -23,8 +23,8 @@ namespace Renderer3D.Models.Processing
 
         private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, int color)
         {
-            var cls = Math.Clamp(scanlineStruct.StartX, 0, _bitmapWriter.Width);
-            var cle = Math.Clamp(scanlineStruct.EndX, 0, _bitmapWriter.Width);
+            int cls = Math.Clamp(scanlineStruct.StartX, 0, _bitmapWriter.Width);
+            int cle = Math.Clamp(scanlineStruct.EndX, 0, _bitmapWriter.Width);
 
             for (int x = cls; x < cle; x++)
             {
