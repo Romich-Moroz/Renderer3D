@@ -8,7 +8,6 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Viewmodels
@@ -17,20 +16,16 @@ namespace Renderer3D.Viewmodels
     {
         public event PropertyChangedEventHandler PropertyChanged = (sender, e) => { };
 
-        private readonly Color RenderColor = Colors.Gray;
+        private Scene Scene { get; }
 
-        public BitmapSource Frame { get; private set; }
         public ICommand MouseMoveCommand { get; }
         public ICommand MouseWheelCommand { get; }
         public ICommand KeyDownCommand { get; }
         public ICommand OpenModelCommand { get; }
 
-        public Point PreviousPosition { get; set; }
-        public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
-        public float MoveStep { get; set; } = 0.25f;
-        public float ScaleStep { get; set; } = 1f;
-
-        private Scene Scene { get; }
+        public BitmapSource Frame { get; private set; }
+        public Point PreviousMousePosition { get; set; }
+        public long RenderTime { get; set; }
 
         private readonly List<Mesh> Meshes = new List<Mesh>
         {
@@ -45,12 +40,13 @@ namespace Renderer3D.Viewmodels
 
         private void UpdateFrame()
         {
-            Frame = Scene.GetRenderedScene(RenderColor);
+            Frame = Scene.GetRenderedScene(out long rt);
+            RenderTime = rt;
         }
 
-        public RendererViewmodel(Window window, PixelFormat pixelFormat)
+        public RendererViewmodel(Window window)
         {
-            Scene = new Scene(pixelFormat, (int)window.Width, (int)window.Height, Meshes[0]);
+            Scene = new Scene((int)window.Width, (int)window.Height, Meshes[0]);
 
             //Window resize handler
             window.SizeChanged += (sender, e) =>
@@ -63,17 +59,17 @@ namespace Renderer3D.Viewmodels
             //Mouse drag handler
             MouseMoveCommand = new RelayCommand<MouseEventArgs>((args) =>
             {
-                if (PreviousPosition.X == -1)
+                if (PreviousMousePosition.X == -1)
                 {
-                    PreviousPosition = Mouse.GetPosition(Application.Current.MainWindow);
+                    PreviousMousePosition = Mouse.GetPosition(Application.Current.MainWindow);
                 }
                 else
                 {
                     Point currentPos = Mouse.GetPosition(Application.Current.MainWindow);
-                    double y = currentPos.X - PreviousPosition.X;
-                    double z = PreviousPosition.Y - currentPos.Y;
-                    Scene.RotateModel(new Vector3(0, (float)y * Sensitivity, (float)z * Sensitivity));
-                    PreviousPosition = currentPos;
+                    double y = currentPos.X - PreviousMousePosition.X;
+                    double z = PreviousMousePosition.Y - currentPos.Y;
+                    Scene.RotateModel(new Vector3(0, (float)y * Scene.SceneProperties.RenderProperties.Sensitivity, (float)z * Scene.SceneProperties.RenderProperties.Sensitivity));
+                    PreviousMousePosition = currentPos;
                 }
                 UpdateFrame();
             }, (args) =>
@@ -83,7 +79,7 @@ namespace Renderer3D.Viewmodels
                     return true;
                 }
 
-                PreviousPosition = new Point { X = -1, Y = -1 };
+                PreviousMousePosition = new Point { X = -1, Y = -1 };
                 return false;
             });
 
@@ -91,7 +87,12 @@ namespace Renderer3D.Viewmodels
             MouseWheelCommand = new RelayCommand<MouseWheelEventArgs>((args) =>
             {
                 int mult = args.Delta > 0 ? -1 : 1;
-                Scene.OffsetCamera(new Vector3 { X = mult * ScaleStep, Y = mult * ScaleStep, Z = mult * ScaleStep });
+                Scene.OffsetCamera(new Vector3
+                {
+                    X = mult * Scene.SceneProperties.RenderProperties.ScaleStep,
+                    Y = mult * Scene.SceneProperties.RenderProperties.ScaleStep,
+                    Z = mult * Scene.SceneProperties.RenderProperties.ScaleStep
+                });
                 UpdateFrame();
             }, null);
 
@@ -110,12 +111,12 @@ namespace Renderer3D.Viewmodels
 
                 if (args.Key == Key.F)
                 {
-                    Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.FlatShading ? RenderMode.LinesOnly : RenderMode.FlatShading;
+                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == RenderMode.FlatShading ? RenderMode.LinesOnly : RenderMode.FlatShading;
                 }
 
                 if (args.Key == Key.P)
                 {
-                    Scene.RenderProperties.RenderMode = Scene.RenderProperties.RenderMode == RenderMode.PhongShading ? RenderMode.LinesOnly : RenderMode.PhongShading;
+                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == RenderMode.PhongShading ? RenderMode.LinesOnly : RenderMode.PhongShading;
                 }
 
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)
@@ -142,7 +143,8 @@ namespace Renderer3D.Viewmodels
             }, null);
 
             //Initial render
-            Frame = Scene.GetRenderedScene(RenderColor);
+            Frame = Scene.GetRenderedScene(out long rt);
+            RenderTime = rt;
         }
     }
 }

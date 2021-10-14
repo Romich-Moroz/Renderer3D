@@ -1,6 +1,5 @@
 ﻿using Renderer3D.Viewmodels;
 using System.Windows;
-using System.Windows.Media;
 
 namespace Renderer3D.Views
 {
@@ -12,7 +11,7 @@ namespace Renderer3D.Views
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new RendererViewmodel(this, PixelFormats.Bgr32);
+            DataContext = new RendererViewmodel(this);
         }
     }
 }

@@ -3,19 +3,19 @@ using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Scene
 {
-    public struct BitmapProperties
+    public class BitmapProperties
     {
-        public PixelFormat PixelFormat { get; set; }
+        public PixelFormat PixelFormat { get; set; } = PixelFormats.Bgr32;
 
         /// <summary>
         /// Width of the bitmap in pixels
         /// </summary>
-        public int Width { get; set; }
+        public int Width { get; set; } = 800;
 
         /// <summary>
         /// Height of the bitmap in pixels
         /// </summary>
-        public int Height { get; set; }
+        public int Height { get; set; } = 600;
 
         /// <summary>
         /// Width of the row of pixels of the bitmap
@@ -26,11 +26,6 @@ namespace Renderer3D.Models.Scene
         /// Aspect ration of the screen aka Width / Height
         /// </summary>
         public float AspectRatio => (float)Width / Height;
-
-        public BitmapProperties(PixelFormat pixelFormat, int width, int height)
-        {
-            (PixelFormat, Width, Height) = (pixelFormat, width, height);
-        }
 
         public WriteableBitmap CreateFromProperties()
         {

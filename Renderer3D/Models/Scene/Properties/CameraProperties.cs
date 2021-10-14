@@ -3,38 +3,33 @@ using System.Numerics;
 
 namespace Renderer3D.Models.Scene
 {
-    public struct CameraProperties
+    public class CameraProperties
     {
         /// <summary>
         /// Position of the camera itself
         /// </summary>
-        public Vector3 CameraPosition { get; set; }
+        public Vector3 CameraPosition { get; set; } = Vector3.One;
 
         /// <summary>
         /// Position where the camera actually looks
         /// </summary>
-        public Vector3 CameraTarget { get; set; }
+        public Vector3 CameraTarget { get; set; } = Vector3.Zero;
 
         /// <summary>
         /// Vertical vector from camera stand point
         /// </summary>
-        public Vector3 CameraUpVector { get; set; }
+        public Vector3 CameraUpVector { get; set; } = Vector3.UnitY;
 
         /// <summary>
         /// Camera field of view
         /// </summary>
-        public float Fov { get; set; }
+        public float Fov { get; set; } = (float)Math.PI / 4;
 
         private void UpdateCameraUpVector()
         {
             Vector3 lookVector = Vector3.Normalize(CameraPosition - CameraTarget);
             Vector3 rightVector = Vector3.Cross(lookVector, Vector3.UnitY);
             CameraUpVector = Vector3.Cross(rightVector, lookVector);
-        }
-
-        public CameraProperties(Vector3 position, Vector3 target, Vector3 upVector, float fov)
-        {
-            (CameraPosition, CameraTarget, CameraUpVector, Fov) = (position, target, upVector, fov);
         }
 
         public void RotateCamera(Vector3 axis, float angle)
@@ -107,5 +102,11 @@ namespace Renderer3D.Models.Scene
             RotateCamera(Vector3.UnitZ, angle);
         }
 
+        public void Reset()
+        {
+            CameraPosition = Vector3.One;
+            CameraTarget = Vector3.Zero;
+            CameraUpVector = Vector3.UnitY;
+        }
     }
 }
