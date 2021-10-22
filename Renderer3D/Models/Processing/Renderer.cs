@@ -137,15 +137,16 @@ namespace Renderer3D.Models.Processing
 
         public void RenderModel(Model model, SceneProperties sceneProperties)
         {
+            _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), _options, Range =>
+            {
+                for (int i = Range.Item1; i < Range.Item2; i++)
+                {
+                    RenderPolygon(model.GetPolygonValue(model.Polygons[i]), sceneProperties);
+                }
+            });
+
             try
             {
-                _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), _options, Range =>
-                {
-                    for (int i = Range.Item1; i < Range.Item2; i++)
-                    {
-                        RenderPolygon(model.GetPolygonValue(model.Polygons[i]), sceneProperties);
-                    }
-                });
                 Bitmap.Lock();
                 Bitmap.AddDirtyRect(new Int32Rect(0, 0, Bitmap.PixelWidth, Bitmap.PixelHeight));
             }
