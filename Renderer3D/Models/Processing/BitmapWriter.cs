@@ -15,6 +15,7 @@ namespace Renderer3D.Models.Processing
         private float[] _depthBuffer;
         private SpinLock[] _lockBuffer;
         private IntPtr backBuffer;
+        private int bytesPerPixel;
 
         public int Stride { get; set; }
         public int Width { get; set; }
@@ -35,6 +36,7 @@ namespace Renderer3D.Models.Processing
                 backBuffer = value.BackBuffer;
                 Stride = value.BackBufferStride;
                 _blankBuffer = new byte[bitmapLength];
+                bytesPerPixel = value.Format.BitsPerPixel / 8;
                 unsafe
                 {
                     fixed (byte* b = _blankBuffer)
@@ -53,7 +55,7 @@ namespace Renderer3D.Models.Processing
         {
             if (x >= 0 && y >= 0 && x < Width && y < Height)
             {
-                IntPtr pBackBuffer = backBuffer + y * Stride + x * 4;
+                IntPtr pBackBuffer = backBuffer + y * Stride + x * bytesPerPixel;
                 int index = x + y * Width;
 
                 bool lockTaken = false;
