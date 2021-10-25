@@ -1,5 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Extensions;
+using Renderer3D.Models.Processing.Shaders;
 using Renderer3D.Models.Scene;
 using System;
 using System.Collections.Concurrent;
@@ -36,30 +37,20 @@ namespace Renderer3D.Models.Processing
                         _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
                         break;
                     case RenderMode.PhongShading:
-                        Vector3 point = new Vector3(x, scanlineStruct.Y, z);
-                        Vector3 viewVector = sceneProperties.CameraProperties.CameraPosition - point;
-                        Vector3 lightVector = sceneProperties.LightingProperties.LightSourcePosition - point;
-                        Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
-
-
-                        Vector3 bary = Calculation.GetFastBarycentricCoordinates
+                        ;
+                        _bitmapWriter.DrawPixel
                         (
-                            scanlineStruct.Triangle.v0.Coordinates,
-                            scanlineStruct.Triangle.v1.Coordinates,
-                            scanlineStruct.Triangle.v2.Coordinates,
-                            point
+                            x,
+                            scanlineStruct.Y,
+                            z,
+                            PhongShader.GetPixelColor
+                            (
+                                scanlineStruct.Triangle,
+                                sceneProperties.LightingProperties,
+                                sceneProperties.CameraProperties,
+                                new Vector3(x, scanlineStruct.Y, z)
+                            )
                         );
-                        Vector3 n = Vector3.Normalize(scanlineStruct.Triangle.v0.Normal * bary.X + scanlineStruct.Triangle.v1.Normal * bary.Y + scanlineStruct.Triangle.v2.Normal * bary.Z);
-
-                        Vector3 ambient = sceneProperties.LightingProperties.AmbientIntensity;
-                        Vector3 diffuse = Calculation.GetDiffuseLightingColor(sceneProperties.LightingProperties, lightVector, n);
-                        Vector3 reflection = Calculation.GetReflectionLightingColor(sceneProperties.LightingProperties, hVector, n);
-
-                        Vector3 intensity = ambient + diffuse + reflection;
-                        intensity.X = Math.Min(intensity.X, 255);
-                        intensity.Y = Math.Min(intensity.Y, 255);
-                        intensity.Z = Math.Min(intensity.Z, 255);
-                        _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, intensity.ToColorInt());
 
                         break;
                     default:
@@ -87,13 +78,7 @@ namespace Renderer3D.Models.Processing
             {
                 return;
             }
-
-            Vector3 vnFace = (t.v0.Normal + t.v1.Normal + t.v2.Normal) / 3;
-            Vector3 centerPoint = (t.v0.Coordinates + t.v1.Coordinates + t.v2.Coordinates) / 3;
-
-            float ndotl = Calculation.ComputeNDotL(sceneProperties.LightingProperties.LightSourcePosition - centerPoint, vnFace) * sceneProperties.LightingProperties.LightSourceIntensity;
-
-            RasterizeTriangle(t, sceneProperties, (sceneProperties.RenderProperties.RenderFallbackColor * ndotl).ToColorInt());
+            RasterizeTriangle(t, sceneProperties, FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor));
         }
 
         private void RenderPhongTriangle(TriangleValue t, SceneProperties sceneProperties)
