@@ -146,10 +146,24 @@ namespace Renderer3D.Models.Processing
             return lightingProperties.Id * ComputeNDotL(light, normal) * lightingProperties.Kd;
         }
 
+        public static float Pow(float value, int pow)
+        {
+            float result = 1.0f;
+            while (pow > 0)
+            {
+                if (pow % 2 == 1)
+                    result *= value;
+                pow >>= 1;
+                value *= value;
+            }
+
+            return result;
+        }
+
         public static Vector3 GetReflectionLightingColor(LightingProperties lightingProperties, Vector3 hVector, Vector3 normal)
         {
             float dot = Math.Abs(Vector3.Dot(normal, hVector));
-            float pow = (float)Math.Pow(dot, lightingProperties.ShininessCoefficient);
+            float pow = Pow(dot, lightingProperties.ShininessCoefficient);
 
             return lightingProperties.Is * pow * lightingProperties.Ks;
         }

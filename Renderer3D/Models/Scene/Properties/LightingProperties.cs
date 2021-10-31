@@ -40,7 +40,7 @@ namespace Renderer3D.Models.Scene
 
         public float Ks { get; set; } = 2f;
         public Vector3 Is { get; set; } = new Vector3(0xFF, 0xCF, 0x42);
-        public float ShininessCoefficient { get; set; } = 512f;
+        public int ShininessCoefficient { get; set; } = 512;
 
         public LightingProperties()
         {
