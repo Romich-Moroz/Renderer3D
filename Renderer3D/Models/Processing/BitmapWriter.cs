@@ -13,7 +13,7 @@ namespace Renderer3D.Models.Processing
         private static byte[] _blankBuffer;
         private WriteableBitmap _bitmap;
         private float[] _depthBuffer;
-        private SpinLock[] _lockBuffer;
+        private object[] _lockBuffer;
         private IntPtr backBuffer;
         private int bytesPerPixel;
 
@@ -46,7 +46,11 @@ namespace Renderer3D.Models.Processing
                     }
                 }
                 _depthBuffer = new float[value.PixelWidth * value.PixelHeight];
-                _lockBuffer = new SpinLock[value.PixelWidth * value.PixelHeight];
+                _lockBuffer = new object[value.PixelWidth * value.PixelHeight];
+                for (int i = 0; i < _lockBuffer.Length; i++)
+                {
+                    _lockBuffer[i] = new object();
+                }
                 _bitmap = value;
             }
         }
@@ -58,11 +62,8 @@ namespace Renderer3D.Models.Processing
                 IntPtr pBackBuffer = backBuffer + y * Stride + x * bytesPerPixel;
                 int index = x + y * Width;
 
-                bool lockTaken = false;
-                try
+                lock (_lockBuffer[index])
                 {
-                    _lockBuffer[index].Enter(ref lockTaken);
-
                     if (useDepthBuffer)
                     {
                         if (_depthBuffer[index] < z)
@@ -75,13 +76,6 @@ namespace Renderer3D.Models.Processing
                     unsafe
                     {
                         *(int*)pBackBuffer = color;
-                    }
-                }
-                finally
-                {
-                    if (lockTaken)
-                    {
-                        _lockBuffer[index].Exit(false);
                     }
                 }
                 return DrawError.Success;
