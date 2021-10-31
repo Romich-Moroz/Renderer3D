@@ -9,7 +9,7 @@ namespace Renderer3D.Models.Scene
         private Vector3 _RenderFallbackColor;
         private int _RenderFallbackColorInt;
 
-        public RenderMode RenderMode { get; set; } = RenderMode.LinesOnly;
+        public RenderMode RenderMode { get; set; } = RenderMode.MeshOnly;
         public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
         public float MoveStep { get; set; } = 0.25f;
         public float ScaleStep { get; set; } = 1f;
@@ -31,7 +31,7 @@ namespace Renderer3D.Models.Scene
 
         public void Reset()
         {
-            RenderMode = RenderMode.LinesOnly;
+            RenderMode = RenderMode.MeshOnly;
         }
     }
 }

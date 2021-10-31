@@ -3,8 +3,9 @@
     public enum RenderMode
     {
         Undefined = 0,
-        LinesOnly = 1,
-        FlatShading = 3,
-        PhongShading = 4
+        MeshOnly = 1,
+        Flat = 2,
+        Phong = 3,
+        Textures = 4
     }
 }

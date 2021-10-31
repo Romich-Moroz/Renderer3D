@@ -33,11 +33,10 @@ namespace Renderer3D.Models.Processing
                 float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
                 switch (sceneProperties.RenderProperties.RenderMode)
                 {
-                    case RenderMode.FlatShading:
+                    case RenderMode.Flat:
                         _bitmapWriter.DrawPixel(x, scanlineStruct.Y, z, color);
                         break;
-                    case RenderMode.PhongShading:
-                        ;
+                    case RenderMode.Phong:
                         _bitmapWriter.DrawPixel
                         (
                             x,
@@ -59,12 +58,22 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, int color)
+        public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties)
         {
+            if (Calculation.IsTriangleInvisible(t))
+            {
+                return;
+            }
             Calculation.SortTriangleVerticesByY(ref t);
 
             int min = (int)Math.Clamp(t.v0.Coordinates.Y, 0, _bitmapWriter.Height);
             int max = (int)Math.Clamp(t.v2.Coordinates.Y, 0, _bitmapWriter.Height);
+
+            int color = default;
+            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
+            {
+                color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
+            }
 
             for (int y = min; y <= max; y++)
             {
@@ -72,30 +81,11 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void RenderFlatTriangle(TriangleValue t, SceneProperties sceneProperties)
-        {
-            if (Calculation.IsTriangleInvisible(t))
-            {
-                return;
-            }
-            RasterizeTriangle(t, sceneProperties, FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor));
-        }
-
-        private void RenderPhongTriangle(TriangleValue t, SceneProperties sceneProperties)
-        {
-            if (Calculation.IsTriangleInvisible(t))
-            {
-                return;
-            }
-
-            RasterizeTriangle(t, sceneProperties, default);
-        }
-
-        private void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties)
+        public void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties)
         {
             switch (sceneProperties.RenderProperties.RenderMode)
             {
-                case RenderMode.LinesOnly:
+                case RenderMode.MeshOnly:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
                         _bitmapWriter.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), sceneProperties.RenderProperties.RenderFallbackColorInt);
@@ -103,16 +93,11 @@ namespace Renderer3D.Models.Processing
                         _bitmapWriter.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), sceneProperties.RenderProperties.RenderFallbackColorInt);
                     }
                     break;
-                case RenderMode.FlatShading:
+                case RenderMode.Flat:
+                case RenderMode.Phong:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RenderFlatTriangle(polygon.TriangleValues[i], sceneProperties);
-                    }
-                    break;
-                case RenderMode.PhongShading:
-                    for (int i = 0; i < polygon.TriangleValues.Length; i++)
-                    {
-                        RenderPhongTriangle(polygon.TriangleValues[i], sceneProperties);
+                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties);
                     }
                     break;
                 default:
