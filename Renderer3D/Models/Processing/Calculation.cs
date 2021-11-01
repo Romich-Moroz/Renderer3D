@@ -1,5 +1,5 @@
 ﻿using Renderer3D.Models.Data;
-using Renderer3D.Models.Scene;
+using Renderer3D.Models.Data.Properties;
 using System;
 using System.Numerics;
 using System.Windows.Media;
@@ -141,9 +141,10 @@ namespace Renderer3D.Models.Processing
             };
         }
 
-        public static Vector3 GetDiffuseLightingColor(LightingProperties lightingProperties, Vector3 light, Vector3 normal)
+        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal)
         {
-            return lightingProperties.Id * ComputeNDotL(light, normal) * lightingProperties.Kd;
+            Vector3 Id = new Vector3(0xD4, 0XAF, 0x37); //Replace with actual texture color
+            return Id * ComputeNDotL(light, normal) * materialProperties.DiffuseColorIntensity;
         }
 
         public static float Pow(float value, int pow)
@@ -152,7 +153,10 @@ namespace Renderer3D.Models.Processing
             while (pow > 0)
             {
                 if (pow % 2 == 1)
+                {
                     result *= value;
+                }
+
                 pow >>= 1;
                 value *= value;
             }
@@ -160,12 +164,13 @@ namespace Renderer3D.Models.Processing
             return result;
         }
 
-        public static Vector3 GetReflectionLightingColor(LightingProperties lightingProperties, Vector3 hVector, Vector3 normal)
+        public static Vector3 GetSpecularColor(MaterialProperties materialProperties, Vector3 hVector, Vector3 normal)
         {
             float dot = Math.Abs(Vector3.Dot(normal, hVector));
-            float pow = Pow(dot, lightingProperties.ShininessCoefficient);
+            float pow = Pow(dot, (int)materialProperties.SpecularHighlight);
 
-            return lightingProperties.Is * pow * lightingProperties.Ks;
+            Vector3 Is = new Vector3(0xFF, 0xCF, 0x42); //Replace with actual reflection color
+            return Is * pow * materialProperties.SpecularColorIntensity;
         }
     }
 }

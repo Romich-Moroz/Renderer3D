@@ -3,6 +3,7 @@ using Renderer3D.Models.Processing;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
@@ -16,30 +17,29 @@ namespace Renderer3D.Models.Scene
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly Renderer Renderer = new Renderer();
+        private readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
         public readonly SceneProperties SceneProperties = new SceneProperties();
 
         private Mesh _mesh;
 
         private void ProjectVertices(Matrix4x4 transformMatrix)
         {
-            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Vertices.Length), options, Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedModel.Vertices[i] = Projection.ProjectVertex(transformMatrix, _mesh.OriginalModel.Vertices[i]);
+                    _mesh.TransformedMeshProperties.Vertices[i] = Projection.ProjectVertex(transformMatrix, _mesh.OriginalMeshProperties.Vertices[i]);
                 }
             });
         }
 
         private void ProjectNormals(Matrix4x4 worldMatrix)
         {
-            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalModel.Normals.Length), options, Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalMeshProperties.Normals.Count), ParallelOptions, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    _mesh.TransformedModel.Normals[i] = Projection.ProjectNormal(worldMatrix, _mesh.OriginalModel.Normals[i]);
+                    _mesh.TransformedMeshProperties.Normals[i] = Projection.ProjectNormal(worldMatrix, _mesh.OriginalMeshProperties.Normals[i]);
                 }
             });
         }
@@ -62,9 +62,9 @@ namespace Renderer3D.Models.Scene
         public void ResizeScene(int newWidth, int newHeight)
         {
 
-            SceneProperties.BitmapProperties.Width = newWidth;
-            SceneProperties.BitmapProperties.Height = newHeight;
-            Renderer.Bitmap = SceneProperties.BitmapProperties.CreateFromProperties();
+            SceneProperties.ScreenProperties.Width = newWidth;
+            SceneProperties.ScreenProperties.Height = newHeight;
+            Renderer.Bitmap = SceneProperties.ScreenProperties.CreateFromProperties();
         }
 
         public void RotateModel(Vector3 rotation)
@@ -81,8 +81,8 @@ namespace Renderer3D.Models.Scene
 
         public Scene(int width, int height, Mesh mesh)
         {
-            SceneProperties.BitmapProperties.Width = width;
-            SceneProperties.BitmapProperties.Height = height;
+            SceneProperties.ScreenProperties.Width = width;
+            SceneProperties.ScreenProperties.Height = height;
             ChangeMesh(mesh);
         }
 
@@ -91,7 +91,7 @@ namespace Renderer3D.Models.Scene
             SceneProperties.ModelProperties.Reset();
             SceneProperties.RenderProperties.Reset();
             SceneProperties.CameraProperties.Reset();
-            SceneProperties.CameraProperties.CenterCamera(_mesh.OriginalModel.Vertices);
+            SceneProperties.CameraProperties.CenterCamera(_mesh.OriginalMeshProperties.Vertices);
             SceneProperties.LightingProperties.LightSourcePosition = SceneProperties.CameraProperties.CameraTarget + new Vector3(-5, 100, 100);
 
         }
@@ -100,7 +100,7 @@ namespace Renderer3D.Models.Scene
         {
             _mesh = mesh;
             ResetState();
-            Renderer.Bitmap = SceneProperties.BitmapProperties.CreateFromProperties();
+            Renderer.Bitmap = SceneProperties.ScreenProperties.CreateFromProperties();
         }
 
         /// <summary>
@@ -110,9 +110,10 @@ namespace Renderer3D.Models.Scene
         public BitmapSource GetRenderedScene(out long renderTime)
         {
 
-            Debug.WriteLine($"Render started. Rendering {_mesh.TransformedModel.Polygons.Length} polygons");
+            int polyCount = _mesh.Models.Sum(m => m.Polygons.Count);
+            Debug.WriteLine($"Render started. Rendering {polyCount} polygons");
             Renderer.Clear();
-            TransformMatrixes matrixes = Projection.GetTransformMatrixes(SceneProperties.ModelProperties, SceneProperties.CameraProperties, SceneProperties.BitmapProperties);
+            TransformMatrixes matrixes = Projection.GetTransformMatrixes(SceneProperties.ModelProperties, SceneProperties.CameraProperties, SceneProperties.ScreenProperties);
 
             Stopwatch.Restart();
             renderTime = Stopwatch.ElapsedMilliseconds;
@@ -124,7 +125,10 @@ namespace Renderer3D.Models.Scene
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Renderer.RenderModel(_mesh.TransformedModel, SceneProperties);
+            for (int i = 0; i < _mesh.Models.Count; i++)
+            {
+                Renderer.RenderModel(_mesh.TransformedMeshProperties, _mesh.Models[i], SceneProperties);
+            }
 
             Debug.WriteLine($"Render time: {Stopwatch.ElapsedMilliseconds - prevMs}");
 

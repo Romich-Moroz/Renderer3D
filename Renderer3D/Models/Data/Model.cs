@@ -1,41 +1,17 @@
-﻿using Renderer3D.Models.Extensions;
-using System.Numerics;
+﻿using Renderer3D.Models.Data.Properties;
+using Renderer3D.Models.Extensions;
+using System.Collections.Generic;
 
 namespace Renderer3D.Models.Data
 {
     public class Model
     {
-        /// <summary>
-        /// All vertices of the model (x, y, z, w)
-        /// </summary>
-        public Vector4[] Vertices { get; }
+        public string ModelName { get; }
+        public string MaterialKey { get; set; }
+        public MaterialProperties MaterialProperties { get; set; }
+        public List<PolygonIndex> Polygons { get; } = new List<PolygonIndex>();
 
-        /// <summary>
-        /// All texture pieces of the model (x(u), y(v), z(w))
-        /// </summary>
-        public Vector3[] Textures { get; }
-
-        /// <summary>
-        /// Normal vectors of the model (x(i), y(j), z(k))
-        /// </summary>
-        public Vector3[] Normals { get; }
-
-        public PolygonIndex[] Polygons { get; }
-
-        public Model(Vector4[] vertices, Vector3[] textures, Vector3[] normals, PolygonIndex[] polygons)
-        {
-            (Vertices, Textures, Normals, Polygons) = (vertices, textures, normals, polygons);
-        }
-
-        public Model(int verticesLength, int texturesLength, int normalsLength, int polygonsLength)
-        {
-            Vertices = new Vector4[verticesLength];
-            Textures = new Vector3[texturesLength];
-            Normals = new Vector3[normalsLength];
-            Polygons = new PolygonIndex[polygonsLength];
-        }
-
-        public PolygonValue GetPolygonValue(PolygonIndex p)
+        public PolygonValue GetPolygonValue(PolygonIndex p, MeshProperties meshProperties)
         {
             TriangleValue[] indices = new TriangleValue[p.TriangleIndices.Length];
             for (int i = 0; i < p.TriangleIndices.Length; i++)
@@ -44,20 +20,20 @@ namespace Renderer3D.Models.Data
                 {
                     v0 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexOneIndex.Coordinates].ToV3(),
-                        Normal = Normals[p.TriangleIndices[i].VertexOneIndex.Normal],
+                        Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexOneIndex.Coordinates].ToV3(),
+                        Normal = meshProperties.Normals[p.TriangleIndices[i].VertexOneIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexOneIndex.Texture]
                     },
                     v1 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexTwoIndex.Coordinates].ToV3(),
-                        Normal = Normals[p.TriangleIndices[i].VertexTwoIndex.Normal],
+                        Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexTwoIndex.Coordinates].ToV3(),
+                        Normal = meshProperties.Normals[p.TriangleIndices[i].VertexTwoIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexTwoIndex.Texture]
                     },
                     v2 = new VertexValue
                     {
-                        Coordinates = Vertices[p.TriangleIndices[i].VertexThreeIndex.Coordinates].ToV3(),
-                        Normal = Normals[p.TriangleIndices[i].VertexThreeIndex.Normal],
+                        Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexThreeIndex.Coordinates].ToV3(),
+                        Normal = meshProperties.Normals[p.TriangleIndices[i].VertexThreeIndex.Normal],
                         //Texture = Textures[p.TriangleIndices[i].VertexThreeIndex.Texture]
                     },
                 };

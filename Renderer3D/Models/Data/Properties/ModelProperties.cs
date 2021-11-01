@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Renderer3D.Models.Scene
+namespace Renderer3D.Models.Data.Properties
 {
     public class ModelProperties
     {

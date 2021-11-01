@@ -1,8 +1,7 @@
-﻿using Renderer3D.Models.Data;
-using Renderer3D.Models.Extensions;
+﻿using Renderer3D.Models.Extensions;
 using System.Numerics;
 
-namespace Renderer3D.Models.Scene
+namespace Renderer3D.Models.Data.Properties
 {
     public class RenderProperties
     {

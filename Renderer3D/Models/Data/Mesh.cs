@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Renderer3D.Models.Data.Properties;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace Renderer3D.Models.Data
 {
@@ -7,17 +9,20 @@ namespace Renderer3D.Models.Data
     /// </summary>
     public class Mesh
     {
-        public Model OriginalModel { get; set; }
-        public Model TransformedModel { get; set; }
+        public MeshProperties OriginalMeshProperties { get; set; }
+        public MeshProperties TransformedMeshProperties { get; set; }
+        public List<Model> Models { get; set; }
 
-        public Mesh(Model model)
+        public Mesh(List<Model> models, MeshProperties meshProperties)
         {
-            OriginalModel = model;
-            TransformedModel = new Model(OriginalModel.Vertices.Length, OriginalModel.Textures.Length, OriginalModel.Normals.Length, OriginalModel.Polygons.Length);
-            Array.Copy(OriginalModel.Vertices, TransformedModel.Vertices, OriginalModel.Vertices.Length);
-            Array.Copy(OriginalModel.Polygons, TransformedModel.Polygons, OriginalModel.Polygons.Length);
-            Array.Copy(OriginalModel.Textures, TransformedModel.Textures, OriginalModel.Textures.Length);
-            Array.Copy(OriginalModel.Normals, TransformedModel.Normals, OriginalModel.Normals.Length);
+            Models = models;
+            OriginalMeshProperties = meshProperties;
+            TransformedMeshProperties = new MeshProperties
+            {
+                Vertices = new List<Vector4>(OriginalMeshProperties.Vertices),
+                Textures = new List<Vector3>(OriginalMeshProperties.Textures),
+                Normals = new List<Vector3>(OriginalMeshProperties.Normals)
+            };
         }
     }
 }

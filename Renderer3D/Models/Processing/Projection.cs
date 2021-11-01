@@ -1,5 +1,5 @@
 ﻿using Renderer3D.Models.Data;
-using Renderer3D.Models.Scene;
+using Renderer3D.Models.Data.Properties;
 using System.Numerics;
 
 namespace Renderer3D.Models.Processing
@@ -42,7 +42,7 @@ namespace Renderer3D.Models.Processing
             };
         }
 
-        public static TransformMatrixes GetTransformMatrixes(ModelProperties modelProperties, CameraProperties cameraProperties, BitmapProperties bitmapProperties)
+        public static TransformMatrixes GetTransformMatrixes(ModelProperties modelProperties, CameraProperties cameraProperties, ScreenProperties screenProperties)
         {
             Matrix4x4 worldMatrix = Matrix4x4.CreateScale(modelProperties.Scale) *
                                     Matrix4x4.CreateRotationX(modelProperties.Rotation.X) *
@@ -50,8 +50,8 @@ namespace Renderer3D.Models.Processing
                                     Matrix4x4.CreateRotationZ(modelProperties.Rotation.Z) *
                                     Matrix4x4.CreateTranslation(modelProperties.Offset);
             Matrix4x4 viewMatrix = Matrix4x4.CreateLookAt(cameraProperties.CameraPosition, cameraProperties.CameraTarget, cameraProperties.CameraUpVector);
-            Matrix4x4 perspectiveMatrix = Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, bitmapProperties.AspectRatio, 1, 100);
-            Matrix4x4 viewportMatrix = CreateViewportMatrix(bitmapProperties.Width, bitmapProperties.Height);
+            Matrix4x4 perspectiveMatrix = Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, screenProperties.AspectRatio, 1, 100);
+            Matrix4x4 viewportMatrix = CreateViewportMatrix(screenProperties.Width, screenProperties.Height);
 
             return new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
         }

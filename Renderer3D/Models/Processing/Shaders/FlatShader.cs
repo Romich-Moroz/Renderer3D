@@ -1,6 +1,6 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Data.Properties;
 using Renderer3D.Models.Extensions;
-using Renderer3D.Models.Scene;
 using System.Numerics;
 
 namespace Renderer3D.Models.Processing.Shaders

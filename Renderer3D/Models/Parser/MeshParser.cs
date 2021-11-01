@@ -1,7 +1,10 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Data.Properties;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace Renderer3D.Models.Parser
@@ -53,6 +56,21 @@ namespace Renderer3D.Models.Parser
             }
             throw new InvalidOperationException("Supplied line values are invalid");
         }
+
+        private static Vector3 ParseVector3(string[] values)
+        {
+            if (values.Length >= 4)
+            {
+                return new Vector3
+                {
+                    X = float.Parse(values[1]),
+                    Y = float.Parse(values[2]),
+                    Z = float.Parse(values[3])
+                };
+            }
+            throw new InvalidOperationException("Supplied line values are invalid");
+        }
+
 
         private static TriangleIndex[] SplitPolygon(List<VertexIndex> polygonVertices)
         {
@@ -119,55 +137,166 @@ namespace Renderer3D.Models.Parser
             };
         }
 
-        /// <summary>
-        /// Parse any .obj model file
-        /// </summary>
-        /// <param name="objPath">File path to .obj file</param>
-        /// <returns>Parsed model object</returns>
-        public static Mesh Parse(string objPath)
+        private static string[] GetStringEntries(string line)
         {
-            using StreamReader file = new StreamReader(objPath);
+            string l = line.Trim();
+            if (l.Length != 0 && l[0] != '#')
+            {
+                return l.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            }
+            return new string[0];
+        }
+
+        private static (List<Model>, MeshProperties) ParseModels(string filepath)
+        {
+            using StreamReader file = new StreamReader(filepath);
+
+            MeshProperties meshProperties = new MeshProperties();
+            List<Model> models = new List<Model>();
+
             string line;
             int lineCounter = 0;
-
-            List<Vector4> vertexes = new List<Vector4>();
-            List<Vector3> vertexTextures = new List<Vector3>();
-            List<Vector3> normalVectors = new List<Vector3>();
-            List<PolygonIndex> polygons = new List<PolygonIndex>();
-
             while ((line = file.ReadLine()) != null)
             {
                 lineCounter++;
-                line = line.Trim();
-
-                //Comment or empty
-                if (line.Length == 0 || line[0] == '#')
+                string[] stringValues = GetStringEntries(line);
+                if (stringValues.Length == 0)
                 {
                     continue;
                 }
-
-                string[] stringValues = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 switch (stringValues[0])
                 {
                     case "v":
-                        vertexes.Add(ParseVertex(stringValues));
+                        meshProperties.Vertices.Add(ParseVertex(stringValues));
                         break;
                     case "vt":
-                        vertexTextures.Add(ParseVertexTexture(stringValues));
+                        meshProperties.Textures.Add(ParseVertexTexture(stringValues));
                         break;
                     case "vn":
-                        normalVectors.Add(ParseNormalVector(stringValues));
+                        meshProperties.Normals.Add(ParseNormalVector(stringValues));
                         break;
                     case "f":
-                        polygons.Add(ParsePolygon(stringValues, vertexes.Count));
+                        models[^1].Polygons.Add(ParsePolygon(stringValues, meshProperties.Vertices.Count));
+                        break;
+                    case "usemtl":
+                        models.Add(new Model());
+                        models[^1].MaterialKey = string.Join(' ', stringValues.Skip(1));
                         break;
                     default:
-                        Console.WriteLine($"Ignorred unsupported format on line №{lineCounter}, Line content: {line}");
+                        Debug.WriteLine($"Ignored unsupported format on line №{lineCounter}, Line content: {line}");
                         continue;
                 }
             }
 
-            return new Mesh(new Model(vertexes.ToArray(), vertexTextures.ToArray(), normalVectors.ToArray(), polygons.ToArray()));
+            return (models, meshProperties);
+        }
+
+        private static Dictionary<string, MaterialProperties> ParseMaterialsFile(string filepath)
+        {
+            using StreamReader file = new StreamReader(filepath);
+
+            Dictionary<string, MaterialProperties> result = new Dictionary<string, MaterialProperties>();
+
+            string line;
+            int lineCounter = 0;
+            MaterialProperties matProperties = new MaterialProperties();
+            while ((line = file.ReadLine()) != null)
+            {
+                lineCounter++;
+                string[] stringValues = GetStringEntries(line);
+
+                if (stringValues.Length == 0)
+                {
+                    continue;
+                }
+
+                switch (stringValues[0])
+                {
+                    case "newmtl":
+                        matProperties = new MaterialProperties();
+                        result.Add(stringValues[1], matProperties);
+                        break;
+                    case "Ns":
+                        matProperties.SpecularHighlight = float.Parse(stringValues[1]);
+                        break;
+                    case "Ka":
+                        matProperties.AmbientColorIntensity = ParseVector3(stringValues);
+                        break;
+                    case "Kd":
+                        matProperties.DiffuseColorIntensity = ParseVector3(stringValues);
+                        break;
+                    case "Ks":
+                        matProperties.SpecularColorIntensity = ParseVector3(stringValues);
+                        break;
+                    case "Ni":
+                        matProperties.OpticalDensity = float.Parse(stringValues[1]);
+                        break;
+                    case "d":
+                        matProperties.Dissolve = float.Parse(stringValues[1]);
+                        break;
+                    case "illum":
+                        matProperties.IlluminationModel = (IlluminationModel)int.Parse(stringValues[1]);
+                        break;
+                    case "map_Kd":
+                        matProperties.ColorTextureFileName = stringValues[1];
+                        break;
+                    case "map_Ks":
+                        matProperties.ColorSpecularFileName = stringValues[1];
+                        break;
+                    default:
+                        Debug.WriteLine($"Ignored unsupported format on line №{lineCounter}, Line content: {line}");
+                        continue;
+                }
+            }
+
+            return result;
+        }
+
+        private static string GetMaterialsPath(string filepath)
+        {
+            using StreamReader file = new StreamReader(filepath);
+            string line;
+            string[] entries = new string[0];
+            while ((line = file.ReadLine()) != null)
+            {
+                entries = GetStringEntries(line);
+                if (entries.Length != 0 && entries[0] == "mtllib")
+                {
+                    break;
+                }
+            }
+
+            if (entries.Length < 2)
+            {
+                throw new InvalidOperationException($"File {filepath} does not contain materials path");
+            };
+
+            return string.Join(' ', entries.Skip(1));
+        }
+
+        /// <summary>
+        /// Parse any .obj model file
+        /// </summary>
+        /// <param name="filepath">File path to .obj file</param>
+        /// <returns>Parsed model object</returns>
+        public static Mesh Parse(string filepath)
+        {
+            string materialsPath = GetMaterialsPath(filepath);
+
+            List<Model> models;
+            MeshProperties meshProperties;
+            (models, meshProperties) = ParseModels(filepath);
+
+            string dir = Path.GetDirectoryName(filepath);
+            string path = Path.Combine(dir, materialsPath);
+            meshProperties.MaterialProperties = ParseMaterialsFile(path);
+
+            foreach (Model model in models)
+            {
+                model.MaterialProperties = meshProperties.MaterialProperties[model.MaterialKey];
+            }
+
+            return new Mesh(models, meshProperties);
         }
     }
 }

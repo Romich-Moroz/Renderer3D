@@ -1,4 +1,5 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Data.Properties;
 using Renderer3D.Models.Extensions;
 using Renderer3D.Models.Processing.Shaders;
 using Renderer3D.Models.Scene;
@@ -14,7 +15,7 @@ namespace Renderer3D.Models.Processing
     public class Renderer
     {
         private readonly BitmapWriter _bitmapWriter = new BitmapWriter();
-        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = 1 };
 
         public WriteableBitmap Bitmap
         {
@@ -22,7 +23,7 @@ namespace Renderer3D.Models.Processing
             set => _bitmapWriter.Bitmap = value;
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, int color)
+        private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
         {
             int cls = Math.Clamp(scanlineStruct.StartX, 0, _bitmapWriter.Width);
             int cle = Math.Clamp(scanlineStruct.EndX, 0, _bitmapWriter.Width);
@@ -45,6 +46,7 @@ namespace Renderer3D.Models.Processing
                             PhongShader.GetPixelColor
                             (
                                 scanlineStruct.Triangle,
+                                materialProperties,
                                 sceneProperties.LightingProperties,
                                 sceneProperties.CameraProperties,
                                 new Vector3(x, scanlineStruct.Y, z)
@@ -58,7 +60,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties)
+        public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
@@ -77,7 +79,7 @@ namespace Renderer3D.Models.Processing
 
             for (int y = min; y <= max; y++)
             {
-                ProcessScanLine(new ScanlineStruct(y, t), sceneProperties, color);
+                ProcessScanLine(new ScanlineStruct(y, t), sceneProperties, materialProperties, color);
             }
         }
 
@@ -194,7 +196,7 @@ namespace Renderer3D.Models.Processing
 
         #endregion
 
-        public void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties)
+        public void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             switch (sceneProperties.RenderProperties.RenderMode)
             {
@@ -210,13 +212,13 @@ namespace Renderer3D.Models.Processing
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
                         //FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties);
-                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties);
+                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 case RenderMode.Phong:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties);
+                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 default:
@@ -224,13 +226,13 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public void RenderModel(Model model, SceneProperties sceneProperties)
+        public void RenderModel(MeshProperties meshProperties, Model model, SceneProperties sceneProperties)
         {
-            _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Length), _options, Range =>
+            _ = Parallel.ForEach(Partitioner.Create(0, model.Polygons.Count), _options, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    RenderPolygon(model.GetPolygonValue(model.Polygons[i]), sceneProperties);
+                    RenderPolygon(model.GetPolygonValue(model.Polygons[i], meshProperties), sceneProperties, model.MaterialProperties);
                 }
             });
 

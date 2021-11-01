@@ -1,9 +1,9 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Renderer3D.Models.Scene
+namespace Renderer3D.Models.Data.Properties
 {
-    public class BitmapProperties
+    public class ScreenProperties
     {
         public PixelFormat PixelFormat { get; set; } = PixelFormats.Bgr32;
 

@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
-namespace Renderer3D.Models.Scene
+namespace Renderer3D.Models.Data.Properties
 {
     public class CameraProperties
     {
@@ -38,18 +39,18 @@ namespace Renderer3D.Models.Scene
             UpdateCameraUpVector();
         }
 
-        public void CenterCamera(Vector4[] vertices)
+        public void CenterCamera(List<Vector4> vertices)
         {
             double x = 0;
             double y = 0;
             double z = 0;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < vertices.Count; i++)
             {
                 x += vertices[i].X;
                 y += vertices[i].Y;
                 z += vertices[i].Z;
             }
-            CameraTarget = new Vector3 { X = (float)x / vertices.Length, Y = (float)y / vertices.Length, Z = (float)z / vertices.Length };
+            CameraTarget = new Vector3 { X = (float)x / vertices.Count, Y = (float)y / vertices.Count, Z = (float)z / vertices.Count };
             CameraPosition = new Vector3(CameraTarget.X + 50, CameraTarget.Y, 0);
             UpdateCameraUpVector();
         }
