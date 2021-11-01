@@ -29,11 +29,11 @@ namespace Renderer3D.Viewmodels
 
         private readonly List<Mesh> Meshes = new List<Mesh>
         {
-            MeshParser.Parse("../../../RenderModels/Custom/Wooden Crate/Wooden Crate.obj"),
+            MeshParser.Parse("../../../RenderModels/Wooden Crate/Wooden Crate.obj"),
             MeshParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj"),
-            MeshParser.Parse("../../../RenderModels/Custom/RC_Car/RC_Car.obj"),
-            MeshParser.Parse("../../../RenderModels/Custom/Eye/eyeball.obj"),
-            MeshParser.Parse("../../../RenderModels/Custom/Cat/12221_Cat_v1_l3.obj"),
+            MeshParser.Parse("../../../RenderModels/RC_Car/RC_Car.obj"),
+            MeshParser.Parse("../../../RenderModels/Eye/eyeball.obj"),
+            MeshParser.Parse("../../../RenderModels/Cat/12221_Cat_v1_l3.obj"),
         };
 
         private void UpdateFrame()

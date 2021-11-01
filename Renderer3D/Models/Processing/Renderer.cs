@@ -15,7 +15,7 @@ namespace Renderer3D.Models.Processing
     public class Renderer
     {
         private readonly BitmapWriter _bitmapWriter = new BitmapWriter();
-        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = 1 };
+        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
         public WriteableBitmap Bitmap
         {

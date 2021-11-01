@@ -343,7 +343,7 @@ healthchecksdb
 Renderer3D/RenderModels/Custom/*
 !Renderer3D/RenderModels/Custom/Readme.txt
 !Renderer3D/RenderModels/Skull/12140_Skull_v3_L2.obj
-!Renderer3D/RenderModels/Debug/debug.obj
-/Report20211031-2052.diagsession
-/Report20211031-2038 (2).diagsession
-/Report20211031-2031.diagsession
+!Renderer3D/RenderModels/Cat/12221_Cat_v1_l3.obj
+!Renderer3D/RenderModels/Eye/eyeball.obj
+!Renderer3D/RenderModels/RC_Car/RC_Car.obj
+!Renderer3D/RenderModels/Wooden Crate/Wooden Crate.obj
