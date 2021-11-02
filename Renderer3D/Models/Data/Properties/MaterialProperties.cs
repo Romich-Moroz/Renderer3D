@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System.Drawing;
+using System.Numerics;
+using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Data.Properties
 {
@@ -81,5 +83,9 @@ namespace Renderer3D.Models.Data.Properties
         /// map_Ke.
         /// </summary>
         public string ColorEmissiveFileName;
+
+
+        public WriteableBitmap TextureColors;
+        public WriteableBitmap SpecularColors;
     }
 }

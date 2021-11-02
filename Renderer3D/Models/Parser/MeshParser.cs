@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Parser
 {
@@ -238,10 +239,10 @@ namespace Renderer3D.Models.Parser
                         matProperties.IlluminationModel = (IlluminationModel)int.Parse(stringValues[1]);
                         break;
                     case "map_Kd":
-                        matProperties.ColorTextureFileName = stringValues[1];
+                        matProperties.ColorTextureFileName = string.Join(' ', stringValues.Skip(1));
                         break;
                     case "map_Ks":
-                        matProperties.ColorSpecularFileName = stringValues[1];
+                        matProperties.ColorSpecularFileName = string.Join(' ', stringValues.Skip(1));
                         break;
                     default:
                         Debug.WriteLine($"Ignored unsupported format on line №{lineCounter}, Line content: {line}");
@@ -291,9 +292,18 @@ namespace Renderer3D.Models.Parser
             string path = Path.Combine(dir, materialsPath);
             meshProperties.MaterialProperties = ParseMaterialsFile(path);
 
+            var loadedTextures = new List<string>();
             foreach (Model model in models)
             {
-                model.MaterialProperties = meshProperties.MaterialProperties[model.MaterialKey];
+                var matProps = meshProperties.MaterialProperties[model.MaterialKey];
+                var texturePath = matProps.ColorTextureFileName.Replace(@"\\", @"\");
+                if (!loadedTextures.Contains(texturePath))
+                {
+                    path = Path.Combine(dir, texturePath);
+                    var uri = new Uri(path, UriKind.Relative);
+                    matProps.TextureColors = new WriteableBitmap(new BitmapImage(uri));
+                }
+                model.MaterialProperties = matProps;
             }
 
             return new Mesh(models, meshProperties);

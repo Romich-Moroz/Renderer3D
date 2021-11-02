@@ -1,5 +1,6 @@
 ﻿using Renderer3D.Models.Data.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Numerics;
 
 namespace Renderer3D.Models.Data
