@@ -27,9 +27,11 @@ namespace Renderer3D.Models.Data.Concurrency
             BytesPerPixel = bitmap.Format.BitsPerPixel / 8;
         }
 
-        public Vector3 GetColor(int u, int v)
+        public Vector3 GetColor(float u, float v)
         {
-            IntPtr pBackBuffer = backBuffer + v * Stride + u * BytesPerPixel;
+            float x = u * Width;
+            float y = v * Height;
+            IntPtr pBackBuffer = backBuffer + (int)y * Stride + (int)x * BytesPerPixel;
             int color = Marshal.ReadInt32(pBackBuffer);
             return color.ToVector3();
         }

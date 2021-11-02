@@ -47,5 +47,6 @@ namespace Renderer3D.Models.Data
 
             (Y, Triangle) = (y, t);
         }
+
     }
 }

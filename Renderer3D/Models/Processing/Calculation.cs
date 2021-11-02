@@ -103,12 +103,12 @@ namespace Renderer3D.Models.Processing
             float v = sacp / denom;
             float u = 1 - w - v;
 
-            return new Vector3
+            return Vector3.Normalize(new Vector3
             {
                 X = u,
                 Y = v,
                 Z = w
-            };
+            });
         }
 
         /// <summary>
@@ -133,17 +133,18 @@ namespace Renderer3D.Models.Processing
             float w = (d00 * d21 - d01 * d20) * invDenom;
             float u = 1.0f - v - w;
 
-            return new Vector3
+            return Vector3.Normalize(new Vector3
             {
                 X = u,
                 Y = v,
                 Z = w
-            };
+            });
         }
 
-        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal)
+        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal, Vector3 textureIndex)
         {
-            Vector3 Id = new Vector3(0xD4, 0XAF, 0x37); //Replace with actual texture color
+            Vector3 Id = new Vector3(0xD4, 0XAF, 0x37);
+            //Vector3 Id = materialProperties.TexturesBitmap.GetColor(textureIndex.X, textureIndex.Y); //Replace with actual texture color
             return Id * ComputeNDotL(light, normal) * materialProperties.DiffuseColorIntensity;
         }
 
@@ -163,7 +164,6 @@ namespace Renderer3D.Models.Processing
 
             return result;
         }
-
         public static Vector3 GetSpecularColor(MaterialProperties materialProperties, Vector3 hVector, Vector3 normal)
         {
             float dot = Math.Abs(Vector3.Dot(normal, hVector));

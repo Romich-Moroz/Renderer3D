@@ -301,9 +301,6 @@ namespace Renderer3D.Models.Parser
                 if (!loadedTextures.Contains(texturePath))
                 {
                     matProps.TexturesBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
-                    Vector3 c1 = matProps.TexturesBitmap.GetColor(0, 0);
-                    Vector3 c2 = matProps.TexturesBitmap.GetColor(100, 100);
-                    Vector3 c3 = matProps.TexturesBitmap.GetColor(500, 500);
                 }
                 model.MaterialProperties = matProps;
             }

@@ -33,6 +33,7 @@ namespace Renderer3D.Models.Processing
             {
                 float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
                 float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
+
                 switch (sceneProperties.RenderProperties.RenderMode)
                 {
                     case RenderMode.Flat:
@@ -77,6 +78,9 @@ namespace Renderer3D.Models.Processing
             {
                 color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
             }
+
+            //var alphaSplit = t.GetAlphaSplit();
+            //var vi = t.v0.InterpolateTo(t.v2, alphaSplit);
 
             for (int y = min; y <= max; y++)
             {

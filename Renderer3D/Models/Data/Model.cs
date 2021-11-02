@@ -22,19 +22,19 @@ namespace Renderer3D.Models.Data
                     {
                         Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexOneIndex.Coordinates].ToV3(),
                         Normal = meshProperties.Normals[p.TriangleIndices[i].VertexOneIndex.Normal],
-                        //Texture = Textures[p.TriangleIndices[i].VertexOneIndex.Texture]
+                        Texture = meshProperties.Textures[p.TriangleIndices[i].VertexOneIndex.Texture]
                     },
                     v1 = new VertexValue
                     {
                         Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexTwoIndex.Coordinates].ToV3(),
                         Normal = meshProperties.Normals[p.TriangleIndices[i].VertexTwoIndex.Normal],
-                        //Texture = Textures[p.TriangleIndices[i].VertexTwoIndex.Texture]
+                        Texture = meshProperties.Textures[p.TriangleIndices[i].VertexTwoIndex.Texture]
                     },
                     v2 = new VertexValue
                     {
                         Coordinates = meshProperties.Vertices[p.TriangleIndices[i].VertexThreeIndex.Coordinates].ToV3(),
                         Normal = meshProperties.Normals[p.TriangleIndices[i].VertexThreeIndex.Normal],
-                        //Texture = Textures[p.TriangleIndices[i].VertexThreeIndex.Texture]
+                        Texture = meshProperties.Textures[p.TriangleIndices[i].VertexThreeIndex.Texture]
                     },
                 };
             }
