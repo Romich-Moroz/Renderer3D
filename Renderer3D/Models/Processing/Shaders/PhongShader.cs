@@ -33,7 +33,7 @@ namespace Renderer3D.Models.Processing.Shaders
             intensity.Y = Math.Min(intensity.Y, 255);
             intensity.Z = Math.Min(intensity.Z, 255);
 
-            return intensity.ToColorInt();
+            return intensity.ToInt();
         }
     }
 }

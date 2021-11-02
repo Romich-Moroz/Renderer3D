@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using System.Windows;
-using System.Windows.Media;
 
 namespace Renderer3D.Models.Extensions
 {
@@ -11,24 +10,24 @@ namespace Renderer3D.Models.Extensions
             return new Point(v.X, v.Y);
         }
 
-        public static Point ToPoint(this Vector4 v)
-        {
-            return new Point(v.X, v.Y);
-        }
-
         public static Vector3 ToV3(this Vector4 v)
         {
             return new Vector3(v.X, v.Y, v.Z);
         }
 
-        public static int ToColorInt(this Vector3 color)
+        public static int ToInt(this Vector3 vector)
         {
-            return ((int)color.X << 16) | ((int)color.Y << 8) | ((int)color.Z << 0);
+            return ((int)vector.X << 16) | ((int)vector.Y << 8) | ((int)vector.Z << 0);
         }
 
-        public static Color ToColor(this int color)
+        public static Vector3 ToVector3(this int number)
         {
-            return Color.FromRgb((byte)((color >> 16) & 0xff), (byte)((color >> 8) & 0xff), (byte)(color & 0xff));
+            return new Vector3
+            {
+                X = (number >> 16) & 0xff,
+                Y = (number >> 8) & 0xff,
+                Z = number & 0xff
+            };
         }
     }
 }

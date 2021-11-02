@@ -18,7 +18,7 @@ namespace Renderer3D.Models.Data.Properties
             set
             {
                 _RenderFallbackColor = value;
-                _RenderFallbackColorInt = value.ToColorInt();
+                _RenderFallbackColorInt = value.ToInt();
             }
         }
         public int RenderFallbackColorInt => _RenderFallbackColorInt;

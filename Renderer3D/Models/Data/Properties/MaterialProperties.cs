@@ -1,6 +1,5 @@
-﻿using System.Drawing;
+﻿using Renderer3D.Models.Data.Concurrency;
 using System.Numerics;
-using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Data.Properties
 {
@@ -84,8 +83,7 @@ namespace Renderer3D.Models.Data.Properties
         /// </summary>
         public string ColorEmissiveFileName;
 
-
-        public WriteableBitmap TextureColors;
-        public WriteableBitmap SpecularColors;
+        public ReadOnlyConcurrentBitmap TexturesBitmap;
+        public ReadOnlyConcurrentBitmap SpecularBitmap;
     }
 }

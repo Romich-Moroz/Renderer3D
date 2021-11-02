@@ -1,4 +1,5 @@
 ﻿using Renderer3D.Models.Data;
+using Renderer3D.Models.Data.Concurrency;
 using Renderer3D.Models.Data.Properties;
 using System;
 using System.Collections.Generic;
@@ -292,16 +293,17 @@ namespace Renderer3D.Models.Parser
             string path = Path.Combine(dir, materialsPath);
             meshProperties.MaterialProperties = ParseMaterialsFile(path);
 
-            var loadedTextures = new List<string>();
+            List<string> loadedTextures = new List<string>();
             foreach (Model model in models)
             {
-                var matProps = meshProperties.MaterialProperties[model.MaterialKey];
-                var texturePath = matProps.ColorTextureFileName.Replace(@"\\", @"\");
+                MaterialProperties matProps = meshProperties.MaterialProperties[model.MaterialKey];
+                string texturePath = matProps.ColorTextureFileName.Replace(@"\\", @"\");
                 if (!loadedTextures.Contains(texturePath))
                 {
-                    path = Path.Combine(dir, texturePath);
-                    var uri = new Uri(path, UriKind.Relative);
-                    matProps.TextureColors = new WriteableBitmap(new BitmapImage(uri));
+                    matProps.TexturesBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
+                    Vector3 c1 = matProps.TexturesBitmap.GetColor(0, 0);
+                    Vector3 c2 = matProps.TexturesBitmap.GetColor(100, 100);
+                    Vector3 c3 = matProps.TexturesBitmap.GetColor(500, 500);
                 }
                 model.MaterialProperties = matProps;
             }
