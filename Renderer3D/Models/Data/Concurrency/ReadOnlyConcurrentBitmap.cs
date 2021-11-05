@@ -15,6 +15,10 @@ namespace Renderer3D.Models.Data.Concurrency
         public int Width { get; }
         public int Height { get; }
         public int BytesPerPixel { get; }
+
+        private float ClampX => Width - 1.0f;
+        private float ClampY => Height - 1.0f;
+
         public WriteableBitmap WriteableBitmap => _bitmap;
 
         public ReadOnlyConcurrentBitmap(WriteableBitmap bitmap)
@@ -27,13 +31,13 @@ namespace Renderer3D.Models.Data.Concurrency
             BytesPerPixel = bitmap.Format.BitsPerPixel / 8;
         }
 
-        public Vector3 GetColor(float u, float v)
+        public int GetColor(float u, float v)
         {
-            float x = u * Width;
-            float y = v * Height;
+            float x = Math.Min(u * Width, ClampX);
+            float y = Math.Min(v * Height, ClampY);
             IntPtr pBackBuffer = backBuffer + (int)y * Stride + (int)x * BytesPerPixel;
-            int color = Marshal.ReadInt32(pBackBuffer);
-            return color.ToVector3();
+            return Marshal.ReadInt32(pBackBuffer);
+
         }
     }
 }

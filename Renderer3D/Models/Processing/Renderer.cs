@@ -90,7 +90,7 @@ namespace Renderer3D.Models.Processing
 
         #region FastTriangleRasterization (Not working)
 
-        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
+        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             float m0 = (v2.Coordinates.X - v0.Coordinates.X) / (v2.Coordinates.Y - v0.Coordinates.Y);
             float m1 = (v2.Coordinates.X - v1.Coordinates.X) / (v2.Coordinates.Y - v1.Coordinates.Y);
@@ -98,7 +98,18 @@ namespace Renderer3D.Models.Processing
             int yStart = (int)Math.Ceiling(v0.Coordinates.Y - 0.5f);
             int yEnd = (int)Math.Ceiling(v2.Coordinates.Y - 0.5f);
 
-            for (int y = yStart; y < yEnd; y++)
+            Vector3 tcEdgeL = v0.Texture;
+            Vector3 tcEdgeR = v1.Texture;
+            Vector3 tcBottom = v2.Texture;
+
+            Vector3 tcEdgeStepL = (tcBottom - tcEdgeL) / (v2.Coordinates.Y - v0.Coordinates.Y);
+            Vector3 tcEdgeStepR = (tcBottom - tcEdgeR) / (v2.Coordinates.Y - v1.Coordinates.Y);
+
+            tcEdgeL += tcEdgeStepL * (yStart + 0.5f - v1.Coordinates.Y);
+            tcEdgeR += tcEdgeStepR * (yStart + 0.5f - v1.Coordinates.Y);
+
+
+            for (int y = yStart; y < yEnd; y++, tcEdgeL += tcEdgeStepL, tcEdgeR += tcEdgeStepR)
             {
                 float px0 = m0 * (y + 0.5f - v0.Coordinates.Y) + v0.Coordinates.X;
                 float px1 = m1 * (y + 0.5f - v1.Coordinates.Y) + v1.Coordinates.X;
@@ -106,14 +117,24 @@ namespace Renderer3D.Models.Processing
                 int xStart = (int)Math.Ceiling(px0 - 0.5f);
                 int xEnd = (int)Math.Ceiling(px1 - 0.5f);
 
-                for (int x = xStart; x < xEnd; x++)
+                Vector3 tcScanStep = (tcEdgeR - tcEdgeL) / (px1 - px0);
+                Vector3 tc = tcEdgeL + tcScanStep * (xStart + 0.5f - px0);
+
+                for (int x = xStart; x < xEnd; x++, tc += tcScanStep)
                 {
-                    _concurrentBitmap.DrawPixel(x, y, color);
+                    switch (sceneProperties.RenderProperties.RenderMode)
+                    {
+                        case RenderMode.Flat:
+                            _concurrentBitmap.DrawPixel(x, y, materialProperties.TexturesBitmap.GetColor(tc.X, tc.Y));
+                            break;
+                        default:
+                            throw new NotImplementedException("Specified render mode is not implemented");
+                    }
                 }
             }
         }
 
-        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
+        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             float m0 = (v1.Coordinates.X - v0.Coordinates.X) / (v1.Coordinates.Y - v0.Coordinates.Y);
             float m1 = (v2.Coordinates.X - v0.Coordinates.X) / (v2.Coordinates.Y - v0.Coordinates.Y);
@@ -121,7 +142,19 @@ namespace Renderer3D.Models.Processing
             int yStart = (int)Math.Ceiling(v0.Coordinates.Y - 0.5f);
             int yEnd = (int)Math.Ceiling(v2.Coordinates.Y - 0.5f);
 
-            for (int y = yStart; y < yEnd; y++)
+            Vector3 tcEdgeL = v0.Texture;
+            Vector3 tcEdgeR = v0.Texture;
+            Vector3 tcBottomL = v1.Texture;
+            Vector3 tcBottomR = v2.Texture;
+
+            Vector3 tcEdgeStepL = (tcBottomL - tcEdgeL) / (v1.Coordinates.Y - v0.Coordinates.Y);
+            Vector3 tcEdgeStepR = (tcBottomR - tcEdgeR) / (v2.Coordinates.Y - v0.Coordinates.Y);
+
+            tcEdgeL += tcEdgeStepL * (yStart + 0.5f - v0.Coordinates.Y);
+            tcEdgeR += tcEdgeStepR * (yStart + 0.5f - v0.Coordinates.Y);
+
+
+            for (int y = yStart; y < yEnd; y++, tcEdgeL += tcEdgeStepL, tcEdgeR += tcEdgeStepR)
             {
                 float px0 = m0 * (y + 0.5f - v0.Coordinates.Y) + v0.Coordinates.X;
                 float px1 = m1 * (y + 0.5f - v0.Coordinates.Y) + v0.Coordinates.X;
@@ -129,9 +162,19 @@ namespace Renderer3D.Models.Processing
                 int xStart = (int)Math.Ceiling(px0 - 0.5f);
                 int xEnd = (int)Math.Ceiling(px1 - 0.5f);
 
-                for (int x = xStart; x < xEnd; x++)
+                Vector3 tcScanStep = (tcEdgeR - tcEdgeL) / (px1 - px0);
+                Vector3 tc = tcEdgeL + tcScanStep * (xStart + 0.5f - px0);
+
+                for (int x = xStart; x < xEnd; x++, tc += tcScanStep)
                 {
-                    _concurrentBitmap.DrawPixel(x, y, color);
+                    switch (sceneProperties.RenderProperties.RenderMode)
+                    {
+                        case RenderMode.Flat:
+                            _concurrentBitmap.DrawPixel(x, y, materialProperties.TexturesBitmap.GetColor(tc.X, tc.Y));
+                            break;
+                        default:
+                            throw new NotImplementedException("Specified render mode is not implemented");
+                    }
                 }
             }
         }
@@ -145,19 +188,13 @@ namespace Renderer3D.Models.Processing
 
             Calculation.SortTriangleVerticesByY(ref t);
 
-            int color = default;
-            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
-            {
-                color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
-            }
-
             if (t.v0.Coordinates.Y == t.v1.Coordinates.Y) // Natural flat top
             {
                 if (t.v1.Coordinates.X < t.v0.Coordinates.X)
                 {
                     (t.v0, t.v1) = (t.v1, t.v0);
                 }
-                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, color);
+                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties);
             }
             else if (t.v1.Coordinates.Y == t.v2.Coordinates.Y) // Natural flat bottom
             {
@@ -165,7 +202,7 @@ namespace Renderer3D.Models.Processing
                 {
                     (t.v1, t.v2) = (t.v2, t.v1);
                 }
-                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, color);
+                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties);
             }
             else //Generic triangle
             {
@@ -174,13 +211,13 @@ namespace Renderer3D.Models.Processing
 
                 if (t.v1.Coordinates.X < splittingVertex.Coordinates.X) //Major right
                 {
-                    DrawFlatBottomTriangle(t.v0, t.v1, splittingVertex, sceneProperties, materialProperties, color);
-                    DrawFlatTopTriangle(t.v1, splittingVertex, t.v2, sceneProperties, materialProperties, color);
+                    DrawFlatBottomTriangle(t.v0, t.v1, splittingVertex, sceneProperties, materialProperties);
+                    DrawFlatTopTriangle(t.v1, splittingVertex, t.v2, sceneProperties, materialProperties);
                 }
                 else //Major left
                 {
-                    DrawFlatBottomTriangle(t.v0, splittingVertex, t.v1, sceneProperties, materialProperties, color);
-                    DrawFlatTopTriangle(splittingVertex, t.v1, t.v2, sceneProperties, materialProperties, color);
+                    DrawFlatBottomTriangle(t.v0, splittingVertex, t.v1, sceneProperties, materialProperties);
+                    DrawFlatTopTriangle(splittingVertex, t.v1, t.v2, sceneProperties, materialProperties);
                 }
             }
         }
@@ -204,8 +241,8 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.Textures:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        //FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
-                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 default:
