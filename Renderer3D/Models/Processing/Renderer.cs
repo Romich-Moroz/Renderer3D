@@ -148,7 +148,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        public void FastTriangleRasterization(TriangleValue t, SceneProperties sceneProperties)
+        public void FastTriangleRasterization(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
@@ -205,16 +205,12 @@ namespace Renderer3D.Models.Processing
                     }
                     break;
                 case RenderMode.Flat:
-                    for (int i = 0; i < polygon.TriangleValues.Length; i++)
-                    {
-                        //FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties);
-                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
-                    }
-                    break;
                 case RenderMode.Phong:
+                case RenderMode.Textures:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 default:
