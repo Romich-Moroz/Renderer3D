@@ -63,7 +63,7 @@ namespace Renderer3D.Models.Processing
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    var result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], transformMatrixes.TransformMatrix);
+                    Vector4 result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], transformMatrixes.TransformMatrix);
                     result /= result.W;
                     mesh.TransformedMeshProperties.Vertices[i] = result;
                 }

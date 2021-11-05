@@ -1,7 +1,6 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Processing;
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;

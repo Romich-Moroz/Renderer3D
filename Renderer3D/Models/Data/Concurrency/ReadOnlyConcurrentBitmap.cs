@@ -1,6 +1,4 @@
-﻿using Renderer3D.Models.Extensions;
-using System;
-using System.Numerics;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
 
