@@ -10,6 +10,8 @@ namespace Renderer3D.Models.Data
 
         public int StartX;
         public int EndX;
+        public float StartT;
+        public float EndT;
         public float Z1;
         public float Z2;
 
@@ -41,6 +43,9 @@ namespace Renderer3D.Models.Data
 
             StartX = (int)Calculation.Interpolate(pa.Coordinates.X, pb.Coordinates.X, Gradient1);
             EndX = (int)Calculation.Interpolate(pc.Coordinates.X, pd.Coordinates.X, Gradient2);
+
+            StartT = Calculation.Interpolate(pa.Texture.X, pb.Texture.X, Gradient1);
+            EndT = Calculation.Interpolate(pc.Texture.X, pd.Texture.X, Gradient2);
 
             Z1 = Calculation.Interpolate(pa.Coordinates.Z, pb.Coordinates.Z, Gradient1);
             Z2 = Calculation.Interpolate(pc.Coordinates.Z, pd.Coordinates.Z, Gradient2);
