@@ -22,28 +22,6 @@ namespace Renderer3D.Models.Scene
 
         private Mesh _mesh;
 
-        private void ProjectVertices(Matrix4x4 transformMatrix)
-        {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
-            {
-                for (int i = Range.Item1; i < Range.Item2; i++)
-                {
-                    _mesh.TransformedMeshProperties.Vertices[i] = Projection.ProjectVertex(transformMatrix, _mesh.OriginalMeshProperties.Vertices[i]);
-                }
-            });
-        }
-
-        private void ProjectNormals(Matrix4x4 worldMatrix)
-        {
-            _ = Parallel.ForEach(Partitioner.Create(0, _mesh.OriginalMeshProperties.Normals.Count), ParallelOptions, Range =>
-            {
-                for (int i = Range.Item1; i < Range.Item2; i++)
-                {
-                    _mesh.TransformedMeshProperties.Normals[i] = Projection.ProjectNormal(worldMatrix, _mesh.OriginalMeshProperties.Normals[i]);
-                }
-            });
-        }
-
         public void OffsetModel(Vector3 offset)
         {
             SceneProperties.ModelProperties.Offset += offset;
@@ -119,8 +97,7 @@ namespace Renderer3D.Models.Scene
             renderTime = Stopwatch.ElapsedMilliseconds;
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
-            ProjectVertices(matrixes.TransformMatrix);
-            ProjectNormals(matrixes.WorldMatrix);
+            Projection.ProjectMesh(matrixes, _mesh);
 
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

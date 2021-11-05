@@ -291,12 +291,12 @@ namespace Renderer3D.Models.Parser
 
             string dir = Path.GetDirectoryName(filepath);
             string path = Path.Combine(dir, materialsPath);
-            meshProperties.MaterialProperties = ParseMaterialsFile(path);
+            Dictionary<string, MaterialProperties> materialProperties = ParseMaterialsFile(path);
 
             List<string> loadedTextures = new List<string>();
             foreach (Model model in models)
             {
-                MaterialProperties matProps = meshProperties.MaterialProperties[model.MaterialKey];
+                MaterialProperties matProps = materialProperties[model.MaterialKey];
                 string texturePath = matProps.ColorTextureFileName.Replace(@"\\", @"\");
                 if (!loadedTextures.Contains(texturePath))
                 {

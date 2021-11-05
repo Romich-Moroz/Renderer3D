@@ -79,8 +79,8 @@ namespace Renderer3D.Models.Processing
                 color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
             }
 
-            float alphaSplit = t.GetAlphaSplit();
-            VertexValue vi = t.v0.InterpolateTo(t.v2, alphaSplit);
+            //float alphaSplit = t.GetInterpolationRatioY();
+            //VertexValue vi = t.v0.InterpolateTo(t.v2, alphaSplit);
 
             for (int y = min; y <= max; y++)
             {
@@ -90,7 +90,7 @@ namespace Renderer3D.Models.Processing
 
         #region FastTriangleRasterization (Not working)
 
-        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties)
+        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
         {
             float m0 = (v2.Coordinates.X - v0.Coordinates.X) / (v2.Coordinates.Y - v0.Coordinates.Y);
             float m1 = (v2.Coordinates.X - v1.Coordinates.X) / (v2.Coordinates.Y - v1.Coordinates.Y);
@@ -106,12 +106,6 @@ namespace Renderer3D.Models.Processing
                 int xStart = (int)Math.Ceiling(px0 - 0.5f);
                 int xEnd = (int)Math.Ceiling(px1 - 0.5f);
 
-                int color = default;
-                if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
-                {
-                    color = FlatShader.GetFaceColor(new TriangleValue { v0 = v0, v1 = v1, v2 = v2 }, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
-                }
-
                 for (int x = xStart; x < xEnd; x++)
                 {
                     _concurrentBitmap.DrawPixel(x, y, color);
@@ -119,7 +113,7 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties)
+        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
         {
             float m0 = (v1.Coordinates.X - v0.Coordinates.X) / (v1.Coordinates.Y - v0.Coordinates.Y);
             float m1 = (v2.Coordinates.X - v0.Coordinates.X) / (v2.Coordinates.Y - v0.Coordinates.Y);
@@ -135,12 +129,6 @@ namespace Renderer3D.Models.Processing
                 int xStart = (int)Math.Ceiling(px0 - 0.5f);
                 int xEnd = (int)Math.Ceiling(px1 - 0.5f);
 
-                int color = default;
-                if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
-                {
-                    color = FlatShader.GetFaceColor(new TriangleValue { v0 = v0, v1 = v1, v2 = v2 }, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
-                }
-
                 for (int x = xStart; x < xEnd; x++)
                 {
                     _concurrentBitmap.DrawPixel(x, y, color);
@@ -154,38 +142,45 @@ namespace Renderer3D.Models.Processing
             {
                 return;
             }
+
             Calculation.SortTriangleVerticesByY(ref t);
 
-            if (t.v0.Coordinates.Y == t.v1.Coordinates.Y)
+            int color = default;
+            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
+            {
+                color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
+            }
+
+            if (t.v0.Coordinates.Y == t.v1.Coordinates.Y) // Natural flat top
             {
                 if (t.v1.Coordinates.X < t.v0.Coordinates.X)
                 {
                     (t.v0, t.v1) = (t.v1, t.v0);
                 }
-                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties);
+                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, color);
             }
-            else if (t.v1.Coordinates.Y == t.v2.Coordinates.Y)
+            else if (t.v1.Coordinates.Y == t.v2.Coordinates.Y) // Natural flat bottom
             {
                 if (t.v2.Coordinates.X < t.v1.Coordinates.X)
                 {
                     (t.v1, t.v2) = (t.v2, t.v1);
                 }
-                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties);
+                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, color);
             }
-            else
+            else //Generic triangle
             {
-                float alphaSplit = t.GetAlphaSplit();
-                VertexValue vValue = t.v0.InterpolateTo(t.v2, alphaSplit);
+                float interpRatio = t.GetInterpolationRatioY();
+                VertexValue splittingVertex = t.v0.InterpolateTo(t.v2, interpRatio);
 
-                if (t.v1.Coordinates.X < vValue.Coordinates.X)
+                if (t.v1.Coordinates.X < splittingVertex.Coordinates.X) //Major right
                 {
-                    DrawFlatBottomTriangle(t.v0, t.v1, vValue, sceneProperties);
-                    DrawFlatTopTriangle(t.v1, vValue, t.v2, sceneProperties);
+                    DrawFlatBottomTriangle(t.v0, t.v1, splittingVertex, sceneProperties, materialProperties, color);
+                    DrawFlatTopTriangle(t.v1, splittingVertex, t.v2, sceneProperties, materialProperties, color);
                 }
-                else
+                else //Major left
                 {
-                    DrawFlatBottomTriangle(t.v0, vValue, t.v1, sceneProperties);
-                    DrawFlatTopTriangle(vValue, t.v1, t.v2, sceneProperties);
+                    DrawFlatBottomTriangle(t.v0, splittingVertex, t.v1, sceneProperties, materialProperties, color);
+                    DrawFlatTopTriangle(splittingVertex, t.v1, t.v2, sceneProperties, materialProperties, color);
                 }
             }
         }
@@ -209,8 +204,8 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.Textures:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
-                        //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        //FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 default:
@@ -235,7 +230,6 @@ namespace Renderer3D.Models.Processing
             }
             finally
             {
-                // Release the back buffer and make it available for display.
                 Bitmap.Unlock();
             }
         }

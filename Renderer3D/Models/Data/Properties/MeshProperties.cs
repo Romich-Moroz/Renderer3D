@@ -19,7 +19,5 @@ namespace Renderer3D.Models.Data.Properties
         /// Normal vectors of the mesh (x(i), y(j), z(k))
         /// </summary>
         public List<Vector3> Normals { get; set; } = new List<Vector3>();
-
-        public Dictionary<string, MaterialProperties> MaterialProperties { get; set; } = new Dictionary<string, MaterialProperties>();
     }
 }

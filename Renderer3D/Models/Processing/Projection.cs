@@ -1,15 +1,15 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Data.Properties;
+using System;
+using System.Collections.Concurrent;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Renderer3D.Models.Processing
 {
     public static class Projection
     {
-        private static Vector4 PerspectiveDivide(Vector4 vector)
-        {
-            return new Vector4 { X = vector.X / vector.W, Y = vector.Y / vector.W, Z = vector.Z / vector.W, W = 1 };
-        }
+        private static readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
         /// <summary>
         /// Creates viewport matrix for transformation
@@ -19,7 +19,7 @@ namespace Renderer3D.Models.Processing
         /// <param name="xMin">Min screen coordinate of x axis</param>
         /// <param name="yMin">Min screen coordinate of y axis</param>
         /// <returns>Viewport patrix for translation</returns>
-        public static Matrix4x4 CreateViewportMatrix(float width, float height, int xMin = 0, int yMin = 0)
+        private static Matrix4x4 CreateViewportMatrix(float width, float height, int xMin = 0, int yMin = 0)
         {
             return new Matrix4x4
             {
@@ -56,14 +56,27 @@ namespace Renderer3D.Models.Processing
             return new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
         }
 
-        public static Vector4 ProjectVertex(Matrix4x4 transformMatrix, Vector4 vertex)
+        public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh)
         {
-            return PerspectiveDivide(Vector4.Transform(vertex, transformMatrix));
-        }
+            //Project to screen
+            _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
+            {
+                for (int i = Range.Item1; i < Range.Item2; i++)
+                {
+                    var result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], transformMatrixes.TransformMatrix);
+                    result /= result.W;
+                    mesh.TransformedMeshProperties.Vertices[i] = result;
+                }
+            });
 
-        public static Vector3 ProjectNormal(Matrix4x4 worldMatrix, Vector3 normal)
-        {
-            return Vector3.TransformNormal(normal, worldMatrix);
+            //Project normals
+            _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Normals.Count), ParallelOptions, Range =>
+            {
+                for (int i = Range.Item1; i < Range.Item2; i++)
+                {
+                    mesh.TransformedMeshProperties.Normals[i] = Vector3.TransformNormal(mesh.OriginalMeshProperties.Normals[i], transformMatrixes.WorldMatrix);
+                }
+            });
         }
     }
 }
