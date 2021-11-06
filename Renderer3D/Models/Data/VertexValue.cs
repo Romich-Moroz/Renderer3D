@@ -7,7 +7,7 @@ namespace Renderer3D.Models.Data
         /// <summary>
         /// Original coordinates translated to screen space using translation matrices
         /// </summary>
-        public Vector3 Coordinates;
+        public Vector4 Coordinates;
 
         /// <summary>
         /// Normal vector of the vertex

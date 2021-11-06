@@ -10,8 +10,8 @@ namespace Renderer3D.Models.Processing.Shaders
     {
         public static int GetPixelColor(MaterialProperties materialProperties, LightingProperties lightingProperties, CameraProperties cameraProperties, VertexValue vertex)
         {
-            Vector3 viewVector = cameraProperties.CameraPosition - vertex.Coordinates;
-            Vector3 lightVector = lightingProperties.LightSourcePosition - vertex.Coordinates;
+            Vector3 viewVector = cameraProperties.CameraPosition - vertex.Coordinates.ToV3();
+            Vector3 lightVector = lightingProperties.LightSourcePosition - vertex.Coordinates.ToV3();
             Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
             Vector3 n = Vector3.Normalize(vertex.Normal);
 

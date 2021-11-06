@@ -67,6 +67,7 @@ namespace Renderer3D.Models.Processing
                     {
                         result /= result.W;
                     }
+                    
                     mesh.TransformedMeshProperties.Vertices[i] = result;
                 }
             });
