@@ -24,7 +24,7 @@ namespace Renderer3D.Models.Processing
             set => _concurrentBitmap = new ConcurrentBitmap(value);
         }
 
-        private void DrawFlatTriangle(VertexValue v0, VertexValue v1, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties)
+        private void DrawFlatTriangle(VertexValue v0, VertexValue v1, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
         {
             VertexValue itEdge0 = v0;
 
@@ -33,12 +33,6 @@ namespace Renderer3D.Models.Processing
 
             itEdge0 += dv0 * (yStart + 0.5f - v0.Coordinates.Y);
             itEdge1 += dv1 * (yStart + 0.5f - v0.Coordinates.Y);
-
-            float ndotl = default;
-            if (sceneProperties.RenderProperties.RenderMode == ShadingMode.Flat)
-            {
-                ndotl = FlatShader.GetNdotL(new TriangleValue { v0 = v0, v1 = v1, v2 = v2 }, sceneProperties.LightingProperties);
-            }
 
             for (int y = yStart; y < yEnd; y++, itEdge0 += dv0, itEdge1 += dv1)
             {
@@ -73,22 +67,22 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties)
+        private void DrawFlatTopTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
         {
             float deltaY = v2.Coordinates.Y - v0.Coordinates.Y;
             VertexValue dv0 = (v2 - v0) / deltaY;
             VertexValue dv1 = (v2 - v1) / deltaY;
 
-            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v1, sceneProperties, materialProperties);
+            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v1, sceneProperties, materialProperties, ndotl);
         }
 
-        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties)
+        private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
         {
             float deltaY = v2.Coordinates.Y - v0.Coordinates.Y;
             VertexValue dv0 = (v1 - v0) / deltaY;
             VertexValue dv1 = (v2 - v0) / deltaY;
 
-            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v0, sceneProperties, materialProperties);
+            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v0, sceneProperties, materialProperties, ndotl);
         }
 
         private void CorrectTransform(ref VertexValue v)
@@ -98,7 +92,6 @@ namespace Renderer3D.Models.Processing
 
 
             v.Coordinates = Vector3.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
-
             v.Coordinates.Z = zInv;
         }
 
@@ -111,13 +104,19 @@ namespace Renderer3D.Models.Processing
 
             Calculation.SortTriangleVerticesByY(ref t);
 
+            float ndotl = default;
+            if (sceneProperties.RenderProperties.RenderMode == ShadingMode.Flat)
+            {
+                ndotl = FlatShader.GetNdotL(t, sceneProperties.LightingProperties);
+            }
+
             if (t.v0.Coordinates.Y == t.v1.Coordinates.Y) // Natural flat top
             {
                 if (t.v1.Coordinates.X < t.v0.Coordinates.X)
                 {
                     (t.v0, t.v1) = (t.v1, t.v0);
                 }
-                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties);
+                DrawFlatTopTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, ndotl);
             }
             else if (t.v1.Coordinates.Y == t.v2.Coordinates.Y) // Natural flat bottom
             {
@@ -125,7 +124,7 @@ namespace Renderer3D.Models.Processing
                 {
                     (t.v1, t.v2) = (t.v2, t.v1);
                 }
-                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties);
+                DrawFlatBottomTriangle(t.v0, t.v1, t.v2, sceneProperties, materialProperties, ndotl);
             }
             else //Generic triangle
             {
@@ -134,13 +133,13 @@ namespace Renderer3D.Models.Processing
 
                 if (t.v1.Coordinates.X < splittingVertex.Coordinates.X) //Major right
                 {
-                    DrawFlatBottomTriangle(t.v0, t.v1, splittingVertex, sceneProperties, materialProperties);
-                    DrawFlatTopTriangle(t.v1, splittingVertex, t.v2, sceneProperties, materialProperties);
+                    DrawFlatBottomTriangle(t.v0, t.v1, splittingVertex, sceneProperties, materialProperties, ndotl);
+                    DrawFlatTopTriangle(t.v1, splittingVertex, t.v2, sceneProperties, materialProperties, ndotl);
                 }
                 else //Major left
                 {
-                    DrawFlatBottomTriangle(t.v0, splittingVertex, t.v1, sceneProperties, materialProperties);
-                    DrawFlatTopTriangle(splittingVertex, t.v1, t.v2, sceneProperties, materialProperties);
+                    DrawFlatBottomTriangle(t.v0, splittingVertex, t.v1, sceneProperties, materialProperties, ndotl);
+                    DrawFlatTopTriangle(splittingVertex, t.v1, t.v2, sceneProperties, materialProperties, ndotl);
                 }
             }
         }
