@@ -10,17 +10,8 @@ namespace Renderer3D.Models.Processing
     public static class Projection
     {
         private static readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        public static TransformMatrixes LastTranformMatrixes { get; private set; }
+        public static TransformMatrixes LastGetTransformMatrixesResult { get; private set; }
 
-
-        /// <summary>
-        /// Creates viewport matrix for transformation
-        /// </summary>
-        /// <param name="width">Width of the screen</param>
-        /// <param name="height">Height of the screen</param>
-        /// <param name="xMin">Min screen coordinate of x axis</param>
-        /// <param name="yMin">Min screen coordinate of y axis</param>
-        /// <returns>Viewport patrix for translation</returns>
         private static Matrix4x4 CreateViewportMatrix(float width, float height, int xMin = 0, int yMin = 0)
         {
             return new Matrix4x4
@@ -55,11 +46,11 @@ namespace Renderer3D.Models.Processing
             Matrix4x4 perspectiveMatrix = Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, screenProperties.AspectRatio, 1, 100);
             Matrix4x4 viewportMatrix = CreateViewportMatrix(screenProperties.Width, screenProperties.Height);
 
-            LastTranformMatrixes = new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
-            return LastTranformMatrixes;
+            LastGetTransformMatrixesResult = new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
+            return LastGetTransformMatrixesResult;
         }
 
-        public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh, RenderMode renderMode)
+        public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh, ShadingMode renderMode)
         {
             //Project to screen
             _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
@@ -67,7 +58,7 @@ namespace Renderer3D.Models.Processing
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
                     Matrix4x4 projMatrix = transformMatrixes.WorldMatrix * transformMatrixes.ViewMatrix * transformMatrixes.PerspectiveMatrix;
-                    if (renderMode == RenderMode.MeshOnly)
+                    if (renderMode == ShadingMode.None)
                     {
                         projMatrix *= transformMatrixes.ViewportMatrix;
                     }

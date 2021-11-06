@@ -85,62 +85,6 @@ namespace Renderer3D.Models.Processing
             return (dP1P2, dP1P3);
         }
 
-        /// <summary>
-        /// More accurate than GetFastBarycentricCoordinates but slower
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
-        public static Vector3 GetBarycentricCoordinates(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
-        {
-            float sabp = Vector3.Cross(p - a, p - b).Length();
-            float sacp = Vector3.Cross(p - a, p - c).Length();
-            float denom = Vector3.Cross(a - b, a - c).Length();
-
-            float w = sabp / denom;
-            float v = sacp / denom;
-            float u = 1 - w - v;
-
-            return Vector3.Normalize(new Vector3
-            {
-                X = u,
-                Y = v,
-                Z = w
-            });
-        }
-
-        /// <summary>
-        /// Faster than GetBarycentricCoordinates but less accurate
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
-        public static Vector3 GetFastBarycentricCoordinates(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
-        {
-            Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
-            float d00 = Vector3.Dot(v0, v0);
-            float d01 = Vector3.Dot(v0, v1);
-            float d11 = Vector3.Dot(v1, v1);
-            float d20 = Vector3.Dot(v2, v0);
-            float d21 = Vector3.Dot(v2, v1);
-            float invDenom = 1.0f / (d00 * d11 - d01 * d01);
-
-            float v = (d11 * d20 - d01 * d21) * invDenom;
-            float w = (d00 * d21 - d01 * d20) * invDenom;
-            float u = 1.0f - v - w;
-
-            return Vector3.Normalize(new Vector3
-            {
-                X = u,
-                Y = v,
-                Z = w
-            });
-        }
-
         public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal, Vector3 texture)
         {
             Vector3 Id = materialProperties.TexturesBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultDiffuseColor; //Replace with actual texture color

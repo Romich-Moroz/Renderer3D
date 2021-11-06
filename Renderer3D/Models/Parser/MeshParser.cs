@@ -81,9 +81,9 @@ namespace Renderer3D.Models.Parser
             {
                 result[0] = new TriangleIndex
                 {
-                    VertexOneIndex = polygonVertices[0],
-                    VertexTwoIndex = polygonVertices[1],
-                    VertexThreeIndex = polygonVertices[2],
+                    Vi1 = polygonVertices[0],
+                    Vi2 = polygonVertices[1],
+                    Vi3 = polygonVertices[2],
                 };
             }
             else
@@ -92,9 +92,9 @@ namespace Renderer3D.Models.Parser
                 {
                     result[i - 2] = new TriangleIndex
                     {
-                        VertexOneIndex = polygonVertices[0],
-                        VertexTwoIndex = polygonVertices[i - 1],
-                        VertexThreeIndex = polygonVertices[i]
+                        Vi1 = polygonVertices[0],
+                        Vi2 = polygonVertices[i - 1],
+                        Vi3 = polygonVertices[i]
                     };
                 }
             }

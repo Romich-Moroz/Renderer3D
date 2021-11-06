@@ -24,55 +24,6 @@ namespace Renderer3D.Models.Processing
             set => _concurrentBitmap = new ConcurrentBitmap(value);
         }
 
-        private void ProcessScanLine(ScanlineStruct scanlineStruct, SceneProperties sceneProperties, MaterialProperties materialProperties, int color)
-        {
-            int cls = Math.Clamp(scanlineStruct.StartX, 0, _concurrentBitmap.Width);
-            int cle = Math.Clamp(scanlineStruct.EndX, 0, _concurrentBitmap.Width);
-
-            for (int x = cls; x < cle; x++)
-            {
-                float gradient = (x - scanlineStruct.StartX) / (float)(scanlineStruct.EndX - scanlineStruct.StartX);
-                float z = Calculation.Interpolate(scanlineStruct.Z1, scanlineStruct.Z2, gradient);
-
-                switch (sceneProperties.RenderProperties.RenderMode)
-                {
-                    case RenderMode.Flat:
-                        _concurrentBitmap.DrawPixel(x, scanlineStruct.Y, z, color);
-                        break;
-                    default:
-                        throw new NotImplementedException("Specified render mode is not implemented");
-                }
-            }
-        }
-
-        public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
-        {
-            if (Calculation.IsTriangleInvisible(t))
-            {
-                return;
-            }
-            Calculation.SortTriangleVerticesByY(ref t);
-
-            int min = (int)Math.Clamp(t.v0.Coordinates.Y, 0, _concurrentBitmap.Height);
-            int max = (int)Math.Clamp(t.v2.Coordinates.Y, 0, _concurrentBitmap.Height);
-
-            int color = default;
-            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
-            {
-                color = FlatShader.GetFaceColor(sceneProperties.RenderProperties.RenderFallbackColor, FlatShader.GetNdotL(t, sceneProperties.LightingProperties));
-            }
-
-            //float alphaSplit = t.GetInterpolationRatioY();
-            //VertexValue vi = t.v0.InterpolateTo(t.v2, alphaSplit);
-
-            for (int y = min; y <= max; y++)
-            {
-                ProcessScanLine(new ScanlineStruct(y, t), sceneProperties, materialProperties, color);
-            }
-        }
-
-        #region FastTriangleRasterization (Not working)
-
         private void DrawFlatTriangle(VertexValue v0, VertexValue v1, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             VertexValue itEdge0 = v0;
@@ -84,7 +35,7 @@ namespace Renderer3D.Models.Processing
             itEdge1 += dv1 * (yStart + 0.5f - v0.Coordinates.Y);
 
             float ndotl = default;
-            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
+            if (sceneProperties.RenderProperties.RenderMode == ShadingMode.Flat)
             {
                 ndotl = FlatShader.GetNdotL(new TriangleValue { v0 = v0, v1 = v1, v2 = v2 }, sceneProperties.LightingProperties);
             }
@@ -109,10 +60,10 @@ namespace Renderer3D.Models.Processing
 
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
-                        case RenderMode.Flat:
+                        case ShadingMode.Flat:
                             _concurrentBitmap.DrawPixel(x, y, z, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y), ndotl));
                             break;
-                        case RenderMode.Phong:
+                        case ShadingMode.Phong:
                             _concurrentBitmap.DrawPixel(x, y, z, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
                             break;
                         default:
@@ -145,11 +96,11 @@ namespace Renderer3D.Models.Processing
             float zInv = 1.0f / v.Coordinates.Z;
             v *= zInv;
 
-            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastTranformMatrixes.ViewportMatrix).ToV3();
+            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix).ToV3();
             v.Coordinates.Z = zInv;
         }
 
-        public void FastTriangleRasterization(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
+        public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             if (Calculation.IsTriangleInvisible(t))
             {
@@ -192,29 +143,27 @@ namespace Renderer3D.Models.Processing
             }
         }
 
-        #endregion
-
         public void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             switch (sceneProperties.RenderProperties.RenderMode)
             {
-                case RenderMode.MeshOnly:
+                case ShadingMode.None:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
-                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), sceneProperties.RenderProperties.RenderFallbackColorInt);
-                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v1.Coordinates.ToPoint(), polygon.TriangleValues[i].v2.Coordinates.ToPoint(), sceneProperties.RenderProperties.RenderFallbackColorInt);
-                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), sceneProperties.RenderProperties.RenderFallbackColorInt);
+                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v0.Coordinates.ToPoint(), polygon.TriangleValues[i].v1.Coordinates.ToPoint(), sceneProperties.RenderProperties.MeshLineColor);
+                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v1.Coordinates.ToPoint(), polygon.TriangleValues[i].v2.Coordinates.ToPoint(), sceneProperties.RenderProperties.MeshLineColor);
+                        _concurrentBitmap.DrawLine(polygon.TriangleValues[i].v2.Coordinates.ToPoint(), polygon.TriangleValues[i].v0.Coordinates.ToPoint(), sceneProperties.RenderProperties.MeshLineColor);
                     }
                     break;
-                case RenderMode.Flat:
-                case RenderMode.Phong:
-                case RenderMode.Textures:
+                case ShadingMode.Flat:
+                case ShadingMode.Phong:
+                case ShadingMode.NormalMap:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
                         CorrectTransform(ref polygon.TriangleValues[i].v0);
                         CorrectTransform(ref polygon.TriangleValues[i].v1);
                         CorrectTransform(ref polygon.TriangleValues[i].v2);
-                        FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
+                        RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                         //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;

@@ -1,11 +1,11 @@
 ﻿namespace Renderer3D.Models.Data
 {
-    public enum RenderMode
+    public enum ShadingMode
     {
         Undefined = 0,
-        MeshOnly = 1,
+        None = 1,
         Flat = 2,
         Phong = 3,
-        Textures = 4
+        NormalMap = 4
     }
 }

@@ -109,12 +109,12 @@ namespace Renderer3D.Viewmodels
 
                 if (args.Key == Key.F)
                 {
-                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == RenderMode.Flat ? RenderMode.MeshOnly : RenderMode.Flat;
+                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == ShadingMode.Flat ? ShadingMode.None : ShadingMode.Flat;
                 }
 
                 if (args.Key == Key.P)
                 {
-                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == RenderMode.Phong ? RenderMode.MeshOnly : RenderMode.Phong;
+                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == ShadingMode.Phong ? ShadingMode.None : ShadingMode.Phong;
                 }
 
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)

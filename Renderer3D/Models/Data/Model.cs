@@ -6,7 +6,6 @@ namespace Renderer3D.Models.Data
 {
     public class Model
     {
-        public string ModelName { get; }
         public string MaterialKey { get; set; }
         public MaterialProperties MaterialProperties { get; set; }
         public List<PolygonIndex> Polygons { get; } = new List<PolygonIndex>();
@@ -31,21 +30,21 @@ namespace Renderer3D.Models.Data
             {
                 v0 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.VertexOneIndex.Coordinates].ToV3(),
-                    Normal = meshProperties.Normals[t.VertexOneIndex.Normal],
-                    Texture = meshProperties.Textures[t.VertexOneIndex.Texture]
+                    Coordinates = meshProperties.Vertices[t.Vi1.Coordinates].ToV3(),
+                    Normal = meshProperties.Normals[t.Vi1.Normal],
+                    Texture = meshProperties.Textures[t.Vi1.Texture]
                 },
                 v1 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.VertexTwoIndex.Coordinates].ToV3(),
-                    Normal = meshProperties.Normals[t.VertexTwoIndex.Normal],
-                    Texture = meshProperties.Textures[t.VertexTwoIndex.Texture]
+                    Coordinates = meshProperties.Vertices[t.Vi2.Coordinates].ToV3(),
+                    Normal = meshProperties.Normals[t.Vi2.Normal],
+                    Texture = meshProperties.Textures[t.Vi2.Texture]
                 },
                 v2 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.VertexThreeIndex.Coordinates].ToV3(),
-                    Normal = meshProperties.Normals[t.VertexThreeIndex.Normal],
-                    Texture = meshProperties.Textures[t.VertexThreeIndex.Texture]
+                    Coordinates = meshProperties.Vertices[t.Vi3.Coordinates].ToV3(),
+                    Normal = meshProperties.Normals[t.Vi3.Normal],
+                    Texture = meshProperties.Textures[t.Vi3.Texture]
                 }
             };
         }

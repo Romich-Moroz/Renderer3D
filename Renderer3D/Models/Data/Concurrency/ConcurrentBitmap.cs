@@ -15,7 +15,7 @@ namespace Renderer3D.Models.Data.Concurrency
         [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
         private static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
 
-        private DrawError DrawPixel(int x, int y, int color, bool useDepthBuffer = false, float z = 0)
+        private DrawResult DrawPixel(int x, int y, int color, bool useDepthBuffer = false, float z = 0)
         {
             if (x >= 0 && y >= 0 && x < Width && y < Height)
             {
@@ -28,7 +28,7 @@ namespace Renderer3D.Models.Data.Concurrency
                     {
                         if (_depthBuffer[index] < z)
                         {
-                            return DrawError.DepthBufferOverlap;
+                            return DrawResult.DepthBufferOverlap;
                         }
                         _depthBuffer[index] = z;
                     }
@@ -38,9 +38,9 @@ namespace Renderer3D.Models.Data.Concurrency
                         *(int*)pBackBuffer = color;
                     }
                 }
-                return DrawError.Success;
+                return DrawResult.Success;
             }
-            return DrawError.OutOfBounds;
+            return DrawResult.OutOfBounds;
         }
 
         public ConcurrentBitmap(WriteableBitmap bitmap) : base(bitmap)
@@ -63,12 +63,12 @@ namespace Renderer3D.Models.Data.Concurrency
             }
         }
 
-        public DrawError DrawPixel(int x, int y, float z, int color)
+        public DrawResult DrawPixel(int x, int y, float z, int color)
         {
             return DrawPixel(x, y, color, true, z);
         }
 
-        public DrawError DrawPixel(int x, int y, int color)
+        public DrawResult DrawPixel(int x, int y, int color)
         {
             return DrawPixel(x, y, color, false, 0);
         }
@@ -81,7 +81,7 @@ namespace Renderer3D.Models.Data.Concurrency
             {
                 double x = x1.X + i * dda.DeltaX;
                 double y = x1.Y + i * dda.DeltaY;
-                if (DrawPixel((int)x, (int)y, color) == DrawError.OutOfBounds)
+                if (DrawPixel((int)x, (int)y, color) == DrawResult.OutOfBounds)
                 {
                     return;
                 }

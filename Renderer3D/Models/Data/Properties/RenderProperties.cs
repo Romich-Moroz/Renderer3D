@@ -5,32 +5,14 @@ namespace Renderer3D.Models.Data.Properties
 {
     public class RenderProperties
     {
-        private Vector3 _RenderFallbackColor;
-        private int _RenderFallbackColorInt;
-
-        public RenderMode RenderMode { get; set; } = RenderMode.MeshOnly;
+        public ShadingMode RenderMode { get; set; } = ShadingMode.None;
         public float Sensitivity { get; set; } = (float)System.Math.PI / 360;
-        public float MoveStep { get; set; } = 0.25f;
         public float ScaleStep { get; set; } = 1f;
-        public Vector3 RenderFallbackColor
-        {
-            get => _RenderFallbackColor;
-            set
-            {
-                _RenderFallbackColor = value;
-                _RenderFallbackColorInt = value.ToInt();
-            }
-        }
-        public int RenderFallbackColorInt => _RenderFallbackColorInt;
-
-        public RenderProperties()
-        {
-            RenderFallbackColor = new Vector3(0x80, 0x80, 0x80);
-        }
+        public int MeshLineColor => new Vector3(0x80, 0x80, 0x80).ToInt();
 
         public void Reset()
         {
-            RenderMode = RenderMode.MeshOnly;
+            RenderMode = ShadingMode.None;
         }
     }
 }
