@@ -17,6 +17,8 @@ namespace Renderer3D.Models.Processing
     {
         private ConcurrentBitmap _concurrentBitmap;
         private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        private float FactorX => _concurrentBitmap.Width / 2.0f;
+        private float FactorY => _concurrentBitmap.Height / 2.0f;
 
         public WriteableBitmap Bitmap
         {
@@ -120,10 +122,14 @@ namespace Renderer3D.Models.Processing
 
                 for (int x = xStart; x < xEnd; x++, iLine += diLine)
                 {
+                    //float z = 1.0f / iLine.Coordinates.Z;
+
+                    var attr = iLine;// * z;
+
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case RenderMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(iLine.Texture.X, iLine.Texture.Y), ndotl));
+                            _concurrentBitmap.DrawPixel(x, y, attr.Coordinates.Z, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(attr.Texture.X, attr.Texture.Y), ndotl));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
@@ -150,6 +156,17 @@ namespace Renderer3D.Models.Processing
             DrawFlatTriangle(v0, v1, v2, dv0, dv1, v0, sceneProperties, materialProperties);
         }
 
+        private void CorrectTransform(ref VertexValue v)
+        {
+            float zInv = 1.0f / v.Coordinates.Z;
+            v *= zInv;
+
+            v.Coordinates = Vector3.Normalize(v.Coordinates);
+            v.Coordinates.X = (v.Coordinates.X + 1.0f) * FactorX;
+            v.Coordinates.Y = (-v.Coordinates.Y + 1.0f) * FactorY;
+            v.Coordinates.Z = zInv;
+        }
+
         public void FastTriangleRasterization(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
             if (Calculation.IsTriangleInvisible(t))
@@ -158,6 +175,9 @@ namespace Renderer3D.Models.Processing
             }
 
             Calculation.SortTriangleVerticesByY(ref t);
+            //CorrectTransform(ref t.v0);
+            //CorrectTransform(ref t.v1);
+            //CorrectTransform(ref t.v2);
 
             if (t.v0.Coordinates.Y == t.v1.Coordinates.Y) // Natural flat top
             {

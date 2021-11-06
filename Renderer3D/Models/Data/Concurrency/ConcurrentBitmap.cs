@@ -97,7 +97,6 @@ namespace Renderer3D.Models.Data.Concurrency
 
             try
             {
-                // Reserve the back buffer for updates.
                 unsafe
                 {
                     fixed (byte* b = _blankBuffer)
