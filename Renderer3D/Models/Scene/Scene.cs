@@ -1,10 +1,8 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Processing;
-using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Scene
@@ -95,7 +93,7 @@ namespace Renderer3D.Models.Scene
             renderTime = Stopwatch.ElapsedMilliseconds;
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Projection.ProjectMesh(matrixes, _mesh);
+            Projection.ProjectMesh(matrixes, _mesh, SceneProperties.RenderProperties.RenderMode);
 
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

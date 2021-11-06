@@ -22,6 +22,8 @@ namespace Renderer3D.Models.Data.Properties
 
     public class MaterialProperties
     {
+        public static readonly Vector3 DefaultSpecularColor = new Vector3(0xFF, 0xCF, 0x42);
+        public static readonly Vector3 DefaultDiffuseColor = new Vector3(0xD4, 0XAF, 0x37);
         /// <summary>
         /// Specifies ambient color, to account for light that is scattered about the entire scene 
         /// [see Wikipedia entry for Phong Reflection Model] using values between 0 and 1 for the RGB components.

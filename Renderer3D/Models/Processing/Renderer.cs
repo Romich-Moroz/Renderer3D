@@ -16,9 +16,7 @@ namespace Renderer3D.Models.Processing
     public class Renderer
     {
         private ConcurrentBitmap _concurrentBitmap;
-        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        private float FactorX => _concurrentBitmap.Width / 2.0f;
-        private float FactorY => _concurrentBitmap.Height / 2.0f;
+        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = 1 };
 
         public WriteableBitmap Bitmap
         {
@@ -40,23 +38,6 @@ namespace Renderer3D.Models.Processing
                 {
                     case RenderMode.Flat:
                         _concurrentBitmap.DrawPixel(x, scanlineStruct.Y, z, color);
-                        break;
-                    case RenderMode.Phong:
-                        _concurrentBitmap.DrawPixel
-                        (
-                            x,
-                            scanlineStruct.Y,
-                            z,
-                            PhongShader.GetPixelColor
-                            (
-                                scanlineStruct.Triangle,
-                                materialProperties,
-                                sceneProperties.LightingProperties,
-                                sceneProperties.CameraProperties,
-                                new Vector3(x, scanlineStruct.Y, z)
-                            )
-                        );
-
                         break;
                     default:
                         throw new NotImplementedException("Specified render mode is not implemented");
@@ -105,7 +86,7 @@ namespace Renderer3D.Models.Processing
             float ndotl = default;
             if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
             {
-                ndotl = FlatShader.GetNdotL(new TriangleValue { v0 = v0, v1 = v1, v2 = v0 }, sceneProperties.LightingProperties);
+                ndotl = FlatShader.GetNdotL(new TriangleValue { v0 = v0, v1 = v1, v2 = v2 }, sceneProperties.LightingProperties);
             }
 
             for (int y = yStart; y < yEnd; y++, itEdge0 += dv0, itEdge1 += dv1)
@@ -122,14 +103,17 @@ namespace Renderer3D.Models.Processing
 
                 for (int x = xStart; x < xEnd; x++, iLine += diLine)
                 {
-                    //float z = 1.0f / iLine.Coordinates.Z;
+                    float z = 1.0f / iLine.Coordinates.Z;
 
-                    var attr = iLine;// * z;
+                    VertexValue interpPixel = iLine * z;
 
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case RenderMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, attr.Coordinates.Z, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(attr.Texture.X, attr.Texture.Y), ndotl));
+                            _concurrentBitmap.DrawPixel(x, y, z, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y), ndotl));
+                            break;
+                        case RenderMode.Phong:
+                            _concurrentBitmap.DrawPixel(x, y, z, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
@@ -161,9 +145,7 @@ namespace Renderer3D.Models.Processing
             float zInv = 1.0f / v.Coordinates.Z;
             v *= zInv;
 
-            v.Coordinates = Vector3.Normalize(v.Coordinates);
-            v.Coordinates.X = (v.Coordinates.X + 1.0f) * FactorX;
-            v.Coordinates.Y = (-v.Coordinates.Y + 1.0f) * FactorY;
+            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastTranformMatrixes.ViewportMatrix).ToV3();
             v.Coordinates.Z = zInv;
         }
 
@@ -175,9 +157,6 @@ namespace Renderer3D.Models.Processing
             }
 
             Calculation.SortTriangleVerticesByY(ref t);
-            //CorrectTransform(ref t.v0);
-            //CorrectTransform(ref t.v1);
-            //CorrectTransform(ref t.v2);
 
             if (t.v0.Coordinates.Y == t.v1.Coordinates.Y) // Natural flat top
             {
@@ -232,6 +211,9 @@ namespace Renderer3D.Models.Processing
                 case RenderMode.Textures:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
                     {
+                        CorrectTransform(ref polygon.TriangleValues[i].v0);
+                        CorrectTransform(ref polygon.TriangleValues[i].v1);
+                        CorrectTransform(ref polygon.TriangleValues[i].v2);
                         FastTriangleRasterization(polygon.TriangleValues[i], sceneProperties, materialProperties);
                         //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }

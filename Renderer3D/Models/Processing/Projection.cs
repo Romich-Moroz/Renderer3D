@@ -10,6 +10,8 @@ namespace Renderer3D.Models.Processing
     public static class Projection
     {
         private static readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        public static TransformMatrixes LastTranformMatrixes { get; private set; }
+
 
         /// <summary>
         /// Creates viewport matrix for transformation
@@ -53,17 +55,23 @@ namespace Renderer3D.Models.Processing
             Matrix4x4 perspectiveMatrix = Matrix4x4.CreatePerspectiveFieldOfView(cameraProperties.Fov, screenProperties.AspectRatio, 1, 100);
             Matrix4x4 viewportMatrix = CreateViewportMatrix(screenProperties.Width, screenProperties.Height);
 
-            return new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
+            LastTranformMatrixes = new TransformMatrixes(worldMatrix, viewMatrix, perspectiveMatrix, viewportMatrix);
+            return LastTranformMatrixes;
         }
 
-        public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh)
+        public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh, RenderMode renderMode)
         {
             //Project to screen
             _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
                 {
-                    Vector4 result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], transformMatrixes.TransformMatrix);
+                    Matrix4x4 projMatrix = transformMatrixes.WorldMatrix * transformMatrixes.ViewMatrix * transformMatrixes.PerspectiveMatrix;
+                    if (renderMode == RenderMode.MeshOnly)
+                    {
+                        projMatrix *= transformMatrixes.ViewportMatrix;
+                    }
+                    Vector4 result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], projMatrix);
                     result /= result.W;
                     mesh.TransformedMeshProperties.Vertices[i] = result;
                 }

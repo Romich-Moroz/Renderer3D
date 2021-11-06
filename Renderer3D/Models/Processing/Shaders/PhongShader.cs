@@ -8,28 +8,16 @@ namespace Renderer3D.Models.Processing.Shaders
 {
     public static class PhongShader
     {
-        public static int GetPixelColor(TriangleValue t, MaterialProperties materialProperties, LightingProperties lightingProperties, CameraProperties cameraProperties, Vector3 point)
+        public static int GetPixelColor(MaterialProperties materialProperties, LightingProperties lightingProperties, CameraProperties cameraProperties, VertexValue vertex)
         {
-            Vector3 viewVector = cameraProperties.CameraPosition - point;
-            Vector3 lightVector = lightingProperties.LightSourcePosition - point;
+            Vector3 viewVector = cameraProperties.CameraPosition - vertex.Coordinates;
+            Vector3 lightVector = lightingProperties.LightSourcePosition - vertex.Coordinates;
             Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
-
-            Vector3 bary = Calculation.GetBarycentricCoordinates
-            (
-                t.v0.Coordinates,
-                t.v1.Coordinates,
-                t.v2.Coordinates,
-                point
-            );
-            //if (bary.X < 0 || bary.Y < 0 || bary.Z < 0)
-            //    return 0;
-
-            Vector3 n = Vector3.Normalize(t.v0.Normal * bary.X + t.v1.Normal * bary.Y + t.v2.Normal * bary.Z);
-            Vector3 textureIndex = Vector3.Normalize(t.v0.Texture * bary.X + t.v1.Texture * bary.Y + t.v2.Texture * bary.Z);
+            Vector3 n = Vector3.Normalize(vertex.Normal);
 
             Vector3 ambient = materialProperties.AmbientColorIntensity;
-            Vector3 diffuse = Calculation.GetDiffuseLightingColor(materialProperties, lightVector, n, textureIndex);
-            Vector3 reflection = Calculation.GetSpecularColor(materialProperties, hVector, n);
+            Vector3 diffuse = Calculation.GetDiffuseLightingColor(materialProperties, lightVector, n, vertex.Texture);
+            Vector3 reflection = Calculation.GetSpecularColor(materialProperties, hVector, n, vertex.Texture);
 
             Vector3 intensity = ambient + diffuse + reflection;
             intensity.X = Math.Min(intensity.X, 255);
