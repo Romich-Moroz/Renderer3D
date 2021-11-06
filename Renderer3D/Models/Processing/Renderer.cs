@@ -17,6 +17,8 @@ namespace Renderer3D.Models.Processing
     {
         private ConcurrentBitmap _concurrentBitmap;
         private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        private float FactorY => _concurrentBitmap.Height / 2.0f;
+        private float FactorX => _concurrentBitmap.Width / 2.0f;
 
         public WriteableBitmap Bitmap
         {
@@ -48,18 +50,16 @@ namespace Renderer3D.Models.Processing
 
                 for (int x = xStart; x < xEnd; x++, iLine += diLine)
                 {
-                    float z = 1.0f / iLine.Coordinates.Z;
-
-                    VertexValue interpPixel = iLine * z;
-                    //interpPixel.Coordinates /= interpPixel.Coordinates.W;
+                    float w = 1.0f / iLine.Coordinates.W;
+                    VertexValue interpPixel = iLine * w;
 
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case ShadingMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, z, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y), ndotl));
+                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y), ndotl));
                             break;
                         case ShadingMode.Phong:
-                            _concurrentBitmap.DrawPixel(x, y, z, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
+                            _concurrentBitmap.DrawPixel(x, y, w, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
@@ -88,14 +88,16 @@ namespace Renderer3D.Models.Processing
 
         private void CorrectTransform(ref VertexValue v)
         {
-            
-            float zInv = 1.0f / v.Coordinates.Z;
-            v *= zInv;
+            float wInv = 1.0f / v.Coordinates.W;
+            v *= wInv;
+
+            //float zInv = 1.0f / v.Coordinates.Z;
+            //v *= zInv;
 
             v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
-            v.Coordinates /= v.Coordinates.W;
+            //v.Coordinates /= v.Coordinates.W;
 
-            v.Coordinates.Z = zInv;
+            v.Coordinates.W = wInv;
         }
 
         public void RasterizeTriangle(TriangleValue t, SceneProperties sceneProperties, MaterialProperties materialProperties)
