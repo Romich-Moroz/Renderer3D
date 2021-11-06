@@ -76,7 +76,7 @@ namespace Renderer3D.Models.Processing
             int color = default;
             if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
             {
-                color = FlatShader.GetFaceColor(t, sceneProperties.LightingProperties, sceneProperties.RenderProperties.RenderFallbackColor);
+                color = FlatShader.GetFaceColor(sceneProperties.RenderProperties.RenderFallbackColor, FlatShader.GetNdotL(t, sceneProperties.LightingProperties));
             }
 
             //float alphaSplit = t.GetInterpolationRatioY();
@@ -100,6 +100,12 @@ namespace Renderer3D.Models.Processing
             itEdge0 += dv0 * (yStart + 0.5f - v0.Coordinates.Y);
             itEdge1 += dv1 * (yStart + 0.5f - v0.Coordinates.Y);
 
+            float ndotl = default;
+            if (sceneProperties.RenderProperties.RenderMode == RenderMode.Flat)
+            {
+                ndotl = FlatShader.GetNdotL(new TriangleValue { v0 = v0, v1 = v1, v2 = v0 }, sceneProperties.LightingProperties);
+            }
+
             for (int y = yStart; y < yEnd; y++, itEdge0 += dv0, itEdge1 += dv1)
             {
                 int xStart = (int)Math.Ceiling(itEdge0.Coordinates.X - 0.5f);
@@ -112,8 +118,8 @@ namespace Renderer3D.Models.Processing
                 {
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
-                        case RenderMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, materialProperties.TexturesBitmap.GetColor(itcLine.X, itcLine.Y));
+                        case RenderMode.Flat: 
+                            _concurrentBitmap.DrawPixel(x, y, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(itcLine.X, itcLine.Y), ndotl));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");

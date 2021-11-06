@@ -16,7 +16,6 @@ namespace Renderer3D.Models.Scene
     {
         private readonly Stopwatch Stopwatch = new Stopwatch();
         private readonly Renderer Renderer = new Renderer();
-        private readonly ParallelOptions ParallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
         public readonly SceneProperties SceneProperties = new SceneProperties();
 
         private Mesh _mesh;
