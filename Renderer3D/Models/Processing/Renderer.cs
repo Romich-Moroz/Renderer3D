@@ -16,7 +16,7 @@ namespace Renderer3D.Models.Processing
     public class Renderer
     {
         private ConcurrentBitmap _concurrentBitmap;
-        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = 1 };
+        private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
         public WriteableBitmap Bitmap
         {
@@ -57,6 +57,7 @@ namespace Renderer3D.Models.Processing
                     float z = 1.0f / iLine.Coordinates.Z;
 
                     VertexValue interpPixel = iLine * z;
+                    //interpPixel.Coordinates = new Vector3 { X = x, Y = y, Z = z };
 
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
@@ -164,7 +165,6 @@ namespace Renderer3D.Models.Processing
                         CorrectTransform(ref polygon.TriangleValues[i].v1);
                         CorrectTransform(ref polygon.TriangleValues[i].v2);
                         RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
-                        //RasterizeTriangle(polygon.TriangleValues[i], sceneProperties, materialProperties);
                     }
                     break;
                 default:
