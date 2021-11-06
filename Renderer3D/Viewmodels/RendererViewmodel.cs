@@ -29,6 +29,7 @@ namespace Renderer3D.Viewmodels
 
         private readonly List<Mesh> Meshes = new List<Mesh>
         {
+            MeshParser.Parse("../../../RenderModels/DebugCube/cube.obj"),
             MeshParser.Parse("../../../RenderModels/Wooden Crate/Wooden Crate.obj"),
             MeshParser.Parse("../../../RenderModels/Skull/12140_Skull_v3_L2.obj"),
             MeshParser.Parse("../../../RenderModels/RC_Car/RC_Car.obj"),

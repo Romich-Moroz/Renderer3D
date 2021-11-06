@@ -30,19 +30,19 @@ namespace Renderer3D.Models.Data
             {
                 v0 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.Vi1.Coordinates],
+                    Coordinates = meshProperties.Vertices[t.Vi1.Coordinates].ToV3(),
                     Normal = meshProperties.Normals[t.Vi1.Normal],
                     Texture = meshProperties.Textures[t.Vi1.Texture]
                 },
                 v1 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.Vi2.Coordinates],
+                    Coordinates = meshProperties.Vertices[t.Vi2.Coordinates].ToV3(),
                     Normal = meshProperties.Normals[t.Vi2.Normal],
                     Texture = meshProperties.Textures[t.Vi2.Texture]
                 },
                 v2 = new VertexValue
                 {
-                    Coordinates = meshProperties.Vertices[t.Vi3.Coordinates],
+                    Coordinates = meshProperties.Vertices[t.Vi3.Coordinates].ToV3(),
                     Normal = meshProperties.Normals[t.Vi3.Normal],
                     Texture = meshProperties.Textures[t.Vi3.Texture]
                 }

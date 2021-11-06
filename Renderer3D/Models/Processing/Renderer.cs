@@ -57,7 +57,6 @@ namespace Renderer3D.Models.Processing
                     float z = 1.0f / iLine.Coordinates.Z;
 
                     VertexValue interpPixel = iLine * z;
-                    //interpPixel.Coordinates = new Vector3 { X = x, Y = y, Z = z };
 
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
@@ -97,7 +96,9 @@ namespace Renderer3D.Models.Processing
             float zInv = 1.0f / v.Coordinates.Z;
             v *= zInv;
 
-            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
+
+            v.Coordinates = Vector3.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
+
             v.Coordinates.Z = zInv;
         }
 

@@ -1,5 +1,4 @@
-﻿using Renderer3D.Models.Extensions;
-using Renderer3D.Models.Processing;
+﻿using Renderer3D.Models.Processing;
 
 namespace Renderer3D.Models.Data
 {
@@ -21,7 +20,7 @@ namespace Renderer3D.Models.Data
         public ScanlineStruct(int y, TriangleValue t)
         {
             double dP1P2, dP1P3;
-            (dP1P2, dP1P3) = Calculation.GetInverseSlopes(t.v0.Coordinates.ToV3(), t.v1.Coordinates.ToV3(), t.v2.Coordinates.ToV3());
+            (dP1P2, dP1P3) = Calculation.GetInverseSlopes(t.v0.Coordinates, t.v1.Coordinates, t.v2.Coordinates);
 
             VertexValue pa, pb, pc, pd;
             if (y < t.v1.Coordinates.Y)

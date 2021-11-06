@@ -1,6 +1,5 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Data.Properties;
-using Renderer3D.Models.Extensions;
 using System;
 using System.Numerics;
 using System.Windows.Media;
@@ -42,7 +41,7 @@ namespace Renderer3D.Models.Processing
         public static bool IsTriangleInvisible(TriangleValue t)
         {
             return (t.v0.Coordinates.Y == t.v1.Coordinates.Y && t.v0.Coordinates.Y == t.v2.Coordinates.Y) ||
-                (Vector3.Cross((t.v1.Coordinates - t.v0.Coordinates).ToV3(), (t.v2.Coordinates - t.v0.Coordinates).ToV3()).Z >= 0);
+                (Vector3.Cross((t.v1.Coordinates - t.v0.Coordinates), (t.v2.Coordinates - t.v0.Coordinates)).Z >= 0);
         }
 
         public static void SortTriangleVerticesByY(ref TriangleValue t)
