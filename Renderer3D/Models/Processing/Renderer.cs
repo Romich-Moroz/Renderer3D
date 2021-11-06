@@ -111,15 +111,19 @@ namespace Renderer3D.Models.Processing
                 int xStart = (int)Math.Ceiling(itEdge0.Coordinates.X - 0.5f);
                 int xEnd = (int)Math.Ceiling(itEdge1.Coordinates.X - 0.5f);
 
-                Vector3 dtcLine = (itEdge1.Texture - itEdge0.Texture) / (itEdge1.Coordinates.X - itEdge0.Coordinates.X);
-                Vector3 itcLine = itEdge0.Texture + dtcLine * (xStart + 0.5f - itEdge0.Coordinates.X);
+                VertexValue iLine = itEdge0;
 
-                for (int x = xStart; x < xEnd; x++, itcLine += dtcLine)
+                float dx = itEdge1.Coordinates.X - itEdge0.Coordinates.X;
+                VertexValue diLine = (itEdge1 - iLine) / dx;
+
+                iLine += diLine * (xStart + 0.5f - itEdge0.Coordinates.X);
+
+                for (int x = xStart; x < xEnd; x++, iLine += diLine)
                 {
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
-                        case RenderMode.Flat: 
-                            _concurrentBitmap.DrawPixel(x, y, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(itcLine.X, itcLine.Y), ndotl));
+                        case RenderMode.Flat:
+                            _concurrentBitmap.DrawPixel(x, y, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(iLine.Texture.X, iLine.Texture.Y), ndotl));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
