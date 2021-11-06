@@ -31,11 +31,11 @@ namespace Renderer3D.Models.Data.Concurrency
 
         public int GetColor(float u, float v)
         {
-            float x = Math.Min(u * Width, ClampX);
-            float y = Math.Min(v * Height, ClampY);
-            IntPtr pBackBuffer = backBuffer + (int)y * Stride + (int)x * BytesPerPixel;
+            int x = (int)Math.Min(u * Width, ClampX);
+            //Colors in bitmap are stored in reverse order from y so texture[0,0] is actually stored in [0,width-1] inside bitmap
+            int y = Height - (int)Math.Min(v * Height, ClampY);
+            IntPtr pBackBuffer = backBuffer + y * Stride + x * BytesPerPixel;
             return Marshal.ReadInt32(pBackBuffer);
-
         }
     }
 }
