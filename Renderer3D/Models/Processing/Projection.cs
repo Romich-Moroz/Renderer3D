@@ -63,7 +63,10 @@ namespace Renderer3D.Models.Processing
                         projMatrix *= transformMatrixes.ViewportMatrix;
                     }
                     Vector4 result = Vector4.Transform(mesh.OriginalMeshProperties.Vertices[i], projMatrix);
-                    result /= result.W;
+                    if (renderMode == ShadingMode.None)
+                    {
+                        result /= result.W;
+                    }
                     mesh.TransformedMeshProperties.Vertices[i] = result;
                 }
             });

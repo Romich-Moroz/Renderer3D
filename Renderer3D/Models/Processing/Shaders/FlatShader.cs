@@ -15,7 +15,7 @@ namespace Renderer3D.Models.Processing.Shaders
         public static float GetNdotL(TriangleValue triangle, LightingProperties lightingProperties)
         {
             Vector3 vnFace = (triangle.v0.Normal + triangle.v1.Normal + triangle.v2.Normal) / 3;
-            Vector3 centerPoint = (triangle.v0.Coordinates + triangle.v1.Coordinates + triangle.v2.Coordinates) / 3;
+            Vector3 centerPoint = (triangle.v0.Coordinates + triangle.v1.Coordinates + triangle.v2.Coordinates).ToV3() / 3;
             return Calculation.ComputeNDotL(lightingProperties.LightSourcePosition - centerPoint, vnFace) * lightingProperties.LightSourceIntensity;
         }
     }

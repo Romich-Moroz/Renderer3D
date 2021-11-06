@@ -9,6 +9,10 @@ namespace Renderer3D.Models.Extensions
         {
             return new Point(v.X, v.Y);
         }
+        public static Point ToPoint(this Vector4 v)
+        {
+            return new Point(v.X, v.Y);
+        }
 
         public static Vector3 ToV3(this Vector4 v)
         {

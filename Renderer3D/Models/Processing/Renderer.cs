@@ -97,7 +97,7 @@ namespace Renderer3D.Models.Processing
             float zInv = 1.0f / v.Coordinates.Z;
             v *= zInv;
 
-            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix).ToV3();
+            v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
             v.Coordinates.Z = zInv;
         }
 
