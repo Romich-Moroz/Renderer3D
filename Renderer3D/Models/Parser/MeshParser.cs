@@ -185,7 +185,6 @@ namespace Renderer3D.Models.Parser
                         models[^1].MaterialKey = string.Join(' ', stringValues.Skip(1));
                         break;
                     default:
-                        Debug.WriteLine($"Ignored unsupported format on line №{lineCounter}, Line content: {line}");
                         continue;
                 }
             }
@@ -245,8 +244,10 @@ namespace Renderer3D.Models.Parser
                     case "map_Ks":
                         matProperties.ColorSpecularFileName = string.Join(' ', stringValues.Skip(1));
                         break;
+                    case "map_Bump":
+                        matProperties.ColorNormalFileName = string.Join(' ', stringValues.Skip(1));
+                        break;
                     default:
-                        Debug.WriteLine($"Ignored unsupported format on line №{lineCounter}, Line content: {line}");
                         continue;
                 }
             }
@@ -297,10 +298,21 @@ namespace Renderer3D.Models.Parser
             foreach (Model model in models)
             {
                 MaterialProperties matProps = materialProperties[model.MaterialKey];
-                string texturePath = matProps.ColorTextureFileName.Replace(@"\\", @"\");
-                if (!loadedTextures.Contains(texturePath))
+                string texturePath = matProps.ColorTextureFileName?.Replace(@"\\", @"\");
+                string specularPath = matProps.ColorSpecularFileName?.Replace(@"\\", @"\");
+                string normalPath = matProps.ColorNormalFileName?.Replace(@"\\", @"\");
+                if (texturePath != null && !loadedTextures.Contains(texturePath))
                 {
                     matProps.TexturesBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
+                }
+                if (specularPath != null && !loadedTextures.Contains(specularPath))
+                {
+                    matProps.SpecularBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
+                    
+                }
+                if (normalPath != null && !loadedTextures.Contains(normalPath))
+                {
+                    matProps.NormalBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
                 }
                 model.MaterialProperties = matProps;
             }

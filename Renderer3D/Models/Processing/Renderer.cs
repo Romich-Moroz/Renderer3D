@@ -17,8 +17,6 @@ namespace Renderer3D.Models.Processing
     {
         private ConcurrentBitmap _concurrentBitmap;
         private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        private float FactorY => _concurrentBitmap.Height / 2.0f;
-        private float FactorX => _concurrentBitmap.Width / 2.0f;
 
         public WriteableBitmap Bitmap
         {
@@ -56,7 +54,8 @@ namespace Renderer3D.Models.Processing
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case ShadingMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(materialProperties.TexturesBitmap.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y), ndotl));
+                            var color = materialProperties.TexturesBitmap?.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
+                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(color, ndotl));
                             break;
                         case ShadingMode.Phong:
                             _concurrentBitmap.DrawPixel(x, y, w, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
@@ -90,13 +89,7 @@ namespace Renderer3D.Models.Processing
         {
             float wInv = 1.0f / v.Coordinates.W;
             v *= wInv;
-
-            //float zInv = 1.0f / v.Coordinates.Z;
-            //v *= zInv;
-
             v.Coordinates = Vector4.Transform(v.Coordinates, Projection.LastGetTransformMatrixesResult.ViewportMatrix);
-            //v.Coordinates /= v.Coordinates.W;
-
             v.Coordinates.W = wInv;
         }
 

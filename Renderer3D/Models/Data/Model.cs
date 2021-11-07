@@ -31,20 +31,20 @@ namespace Renderer3D.Models.Data
                 v0 = new VertexValue
                 {
                     Coordinates = meshProperties.Vertices[t.Vi1.Coordinates],
-                    Normal = meshProperties.Normals[t.Vi1.Normal],
-                    Texture = meshProperties.Textures[t.Vi1.Texture]
+                    Normal = t.Vi1.Normal != -1 ? meshProperties.Normals[t.Vi1.Normal] : default,
+                    Texture = t.Vi1.Texture != -1 ? meshProperties.Textures[t.Vi1.Texture] : default
                 },
                 v1 = new VertexValue
                 {
                     Coordinates = meshProperties.Vertices[t.Vi2.Coordinates],
-                    Normal = meshProperties.Normals[t.Vi2.Normal],
-                    Texture = meshProperties.Textures[t.Vi2.Texture]
+                    Normal = t.Vi2.Normal != -1 ? meshProperties.Normals[t.Vi2.Normal] : default,
+                    Texture = t.Vi2.Texture != -1 ? meshProperties.Textures[t.Vi2.Texture] : default
                 },
                 v2 = new VertexValue
                 {
                     Coordinates = meshProperties.Vertices[t.Vi3.Coordinates],
-                    Normal = meshProperties.Normals[t.Vi3.Normal],
-                    Texture = meshProperties.Textures[t.Vi3.Texture]
+                    Normal = t.Vi3.Normal != -1 ? meshProperties.Normals[t.Vi3.Normal] : default,
+                    Texture = t.Vi3.Texture != -1 ? meshProperties.Textures[t.Vi3.Texture] : default
                 }
             };
         }

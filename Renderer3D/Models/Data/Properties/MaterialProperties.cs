@@ -81,11 +81,12 @@ namespace Renderer3D.Models.Data.Properties
         public string ColorSpecularFileName;
 
         /// <summary>
-        /// map_Ke.
+        /// map_Bump.
         /// </summary>
-        public string ColorEmissiveFileName;
+        public string ColorNormalFileName;
 
         public ReadOnlyConcurrentBitmap TexturesBitmap;
         public ReadOnlyConcurrentBitmap SpecularBitmap;
+        public ReadOnlyConcurrentBitmap NormalBitmap;
     }
 }

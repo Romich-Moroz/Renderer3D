@@ -16,9 +16,6 @@ namespace Renderer3D.Models.Data.Concurrency
         public int Height { get; }
         public int BytesPerPixel { get; }
 
-        private float ClampX => Width - 1.0f;
-        private float ClampY => Height - 1.0f;
-
         public WriteableBitmap WriteableBitmap => _bitmap;
 
         public ReadOnlyConcurrentBitmap(WriteableBitmap bitmap)
@@ -33,9 +30,9 @@ namespace Renderer3D.Models.Data.Concurrency
 
         public Vector3 GetColor(float u, float v)
         {
-            int x = (int)Math.Min(u * Width, ClampX);
+            int x = (int)(u * Width);
             //Colors in bitmap are stored in reverse order from y so texture[0,0] is actually stored in [0,width-1] inside bitmap
-            int y = Height - (int)Math.Min(v * Height, ClampY);
+            int y = (int)((1 - v) * Height);
             IntPtr pBackBuffer = backBuffer + y * Stride + x * BytesPerPixel;
             return Marshal.ReadInt32(pBackBuffer).ToVector3();
         }
