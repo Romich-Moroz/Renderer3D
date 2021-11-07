@@ -3,7 +3,6 @@ using Renderer3D.Models.Data.Concurrency;
 using Renderer3D.Models.Data.Properties;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -308,7 +307,7 @@ namespace Renderer3D.Models.Parser
                 if (specularPath != null && !loadedTextures.Contains(specularPath))
                 {
                     matProps.SpecularBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
-                    
+
                 }
                 if (normalPath != null && !loadedTextures.Contains(normalPath))
                 {

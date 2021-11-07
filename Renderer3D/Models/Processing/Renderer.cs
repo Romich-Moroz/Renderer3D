@@ -54,7 +54,7 @@ namespace Renderer3D.Models.Processing
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case ShadingMode.Flat:
-                            var color = materialProperties.TexturesBitmap?.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
+                            Vector3 color = materialProperties.TexturesBitmap?.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
                             _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(color, ndotl));
                             break;
                         case ShadingMode.Phong:

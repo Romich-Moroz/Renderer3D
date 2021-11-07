@@ -11,7 +11,7 @@ namespace Renderer3D.Models.Processing.Shaders
     {
         private static Vector3? GetNormalFromMap(ReadOnlyConcurrentBitmap map, Vector3 texture)
         {
-            var color = map?.GetColor(texture.X, texture.Y);
+            Vector3? color = map?.GetColor(texture.X, texture.Y);
             if (color != null)
             {
                 return Vector3.Normalize(Vector3.Normalize(color.Value) * 2 - new Vector3(1, 1, 1));

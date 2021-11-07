@@ -1,5 +1,4 @@
 ﻿using Renderer3D.Models.Data.Properties;
-using Renderer3D.Models.Extensions;
 using System.Collections.Generic;
 
 namespace Renderer3D.Models.Data
