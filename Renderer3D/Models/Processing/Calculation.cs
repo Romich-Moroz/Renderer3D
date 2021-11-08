@@ -86,10 +86,9 @@ namespace Renderer3D.Models.Processing
             return (dP1P2, dP1P3);
         }
 
-        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal, Vector3 texture)
+        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal, Vector3 color)
         {
-            Vector3 Id = materialProperties.TexturesBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultDiffuseColor; //Replace with actual texture color
-            return Id * ComputeNDotL(light, normal) * materialProperties.DiffuseColorIntensity;
+            return color * ComputeNDotL(light, normal) * materialProperties.DiffuseColorIntensity;
         }
 
         public static float Pow(float value, int pow)
@@ -116,5 +115,6 @@ namespace Renderer3D.Models.Processing
             Vector3 Is = materialProperties.SpecularBitmap?.GetColor(reflectionMapTexture.X, reflectionMapTexture.Y) ?? MaterialProperties.DefaultSpecularColor;
             return Is * pow * materialProperties.SpecularColorIntensity;
         }
+
     }
 }

@@ -1,0 +1,11 @@
+
+newmtl head
+	Ns 24.0000
+	Ni 1.5000 
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.1170 0.1170 0.1170
+	map_Bump african_head_nm.png
+	map_Kd african_head_diffuse.png
+	map_Ks african_head_spec.png
+

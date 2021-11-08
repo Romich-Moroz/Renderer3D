@@ -24,6 +24,24 @@ namespace Renderer3D.Models.Processing
             set => _concurrentBitmap = new ConcurrentBitmap(value);
         }
 
+        private static RenderStruct GetRenderStruct(MaterialProperties materialProperties, Vector3 texture, Vector3 normal)
+        {
+            Vector3 color = materialProperties.TexturesBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
+            normal = materialProperties.NormalBitmap?.GetColor(texture.X, texture.Y) ?? Vector3.Normalize(normal);
+            Vector3 specularColor = materialProperties.SpecularBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultSpecularColor;
+            if (materialProperties.NormalBitmap != null)
+            {
+                normal = Vector3.Normalize(normal) * 2 - new Vector3(1, 1, 1);
+            }
+
+            return new RenderStruct
+            {
+                DiffuseColor = color,
+                Normal = normal,
+                SpecularColor = specularColor
+            };
+        }
+
         private void DrawFlatTriangle(VertexValue v0, VertexValue v1, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
         {
             VertexValue itEdge0 = v0;
@@ -51,14 +69,15 @@ namespace Renderer3D.Models.Processing
                     float w = 1.0f / iLine.Coordinates.W;
                     VertexValue interpPixel = iLine * w;
 
+                    RenderStruct ps = GetRenderStruct(materialProperties, interpPixel.Texture, interpPixel.Normal);
+
                     switch (sceneProperties.RenderProperties.RenderMode)
                     {
                         case ShadingMode.Flat:
-                            Vector3 color = materialProperties.TexturesBitmap?.GetColor(interpPixel.Texture.X, interpPixel.Texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
-                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(color, ndotl));
+                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(ps.DiffuseColor, ndotl));
                             break;
                         case ShadingMode.Phong:
-                            _concurrentBitmap.DrawPixel(x, y, w, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel));
+                            _concurrentBitmap.DrawPixel(x, y, w, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel, ps));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
