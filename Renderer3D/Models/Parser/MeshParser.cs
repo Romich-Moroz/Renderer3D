@@ -251,6 +251,10 @@ namespace Renderer3D.Models.Parser
                 }
             }
 
+            matProperties.ColorTextureFileName = matProperties.ColorTextureFileName?.Replace(@"\\", @"\");
+            matProperties.ColorSpecularFileName = matProperties.ColorSpecularFileName?.Replace(@"\\", @"\");
+            matProperties.ColorNormalFileName = matProperties.ColorNormalFileName?.Replace(@"\\", @"\");
+
             return result;
         }
 
@@ -276,6 +280,20 @@ namespace Renderer3D.Models.Parser
             return string.Join(' ', entries.Skip(1));
         }
 
+        private static ReadOnlyConcurrentBitmap LoadBitmap(Dictionary<string, ReadOnlyConcurrentBitmap> dict, string dir, string filename)
+        {
+            string path = Path.Combine(dir, filename);
+            ReadOnlyConcurrentBitmap bmp;
+            if (!string.IsNullOrEmpty(filename) && !dict.ContainsKey(filename) && File.Exists(path))
+            {
+                bmp = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(path, UriKind.Relative))));
+                dict.Add(filename, bmp);
+                return bmp;
+            }
+            dict.TryGetValue(filename, out bmp);
+            return bmp;
+        }
+
         /// <summary>
         /// Parse any .obj model file
         /// </summary>
@@ -293,26 +311,13 @@ namespace Renderer3D.Models.Parser
             string path = Path.Combine(dir, materialsPath);
             Dictionary<string, MaterialProperties> materialProperties = ParseMaterialsFile(path);
 
-            List<string> loadedTextures = new List<string>();
+            Dictionary<string, ReadOnlyConcurrentBitmap> loadedTextures = new Dictionary<string, ReadOnlyConcurrentBitmap>();
             foreach (Model model in models)
             {
                 MaterialProperties matProps = materialProperties[model.MaterialKey];
-                string texturePath = matProps.ColorTextureFileName?.Replace(@"\\", @"\");
-                string specularPath = matProps.ColorSpecularFileName?.Replace(@"\\", @"\");
-                string normalPath = matProps.ColorNormalFileName?.Replace(@"\\", @"\");
-                if (texturePath != null && !loadedTextures.Contains(texturePath))
-                {
-                    matProps.TexturesBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
-                }
-                if (specularPath != null && !loadedTextures.Contains(specularPath))
-                {
-                    matProps.SpecularBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
-
-                }
-                if (normalPath != null && !loadedTextures.Contains(normalPath))
-                {
-                    matProps.NormalBitmap = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(Path.Combine(dir, texturePath), UriKind.Relative))));
-                }
+                matProps.TexturesBitmap = LoadBitmap(loadedTextures, dir, matProps.ColorTextureFileName ?? "");
+                matProps.SpecularBitmap = LoadBitmap(loadedTextures, dir, matProps.ColorSpecularFileName ?? "");
+                matProps.NormalBitmap = LoadBitmap(loadedTextures, dir, matProps.ColorNormalFileName ?? "");
                 model.MaterialProperties = matProps;
             }
 

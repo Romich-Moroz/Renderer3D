@@ -35,6 +35,7 @@ namespace Renderer3D.Viewmodels
             MeshParser.Parse("../../../RenderModels/RC_Car/RC_Car.obj"),
             MeshParser.Parse("../../../RenderModels/Eye/eyeball.obj"),
             MeshParser.Parse("../../../RenderModels/Cat/12221_Cat_v1_l3.obj"),
+            MeshParser.Parse("../../../RenderModels/AfricanHead/african_head.obj"),
         };
 
         private void UpdateFrame()
@@ -110,12 +111,12 @@ namespace Renderer3D.Viewmodels
 
                 if (args.Key == Key.F)
                 {
-                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == ShadingMode.Flat ? ShadingMode.None : ShadingMode.Flat;
+                    Scene.SceneProperties.RenderProperties.ShadingMode = Scene.SceneProperties.RenderProperties.ShadingMode == ShadingMode.Flat ? ShadingMode.None : ShadingMode.Flat;
                 }
 
                 if (args.Key == Key.P)
                 {
-                    Scene.SceneProperties.RenderProperties.RenderMode = Scene.SceneProperties.RenderProperties.RenderMode == ShadingMode.Phong ? ShadingMode.None : ShadingMode.Phong;
+                    Scene.SceneProperties.RenderProperties.ShadingMode = Scene.SceneProperties.RenderProperties.ShadingMode == ShadingMode.Phong ? ShadingMode.None : ShadingMode.Phong;
                 }
 
                 if (args.Key >= Key.D0 && args.Key <= Key.D9)

@@ -14,7 +14,7 @@ namespace Renderer3D.Models.Processing.Shaders
             Vector3 lightVector = lightingProperties.LightSourcePosition - vertex.Coordinates.ToV3();
             Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
 
-            Vector3 ambient = materialProperties.AmbientColorIntensity;
+            Vector3 ambient = MaterialProperties.DefaultAmbientColor * materialProperties.AmbientColorIntensity;
             Vector3 diffuse = Calculation.GetDiffuseLightingColor(materialProperties, lightVector, renderStruct);
             Vector3 reflection = Calculation.GetSpecularColor(materialProperties, hVector, renderStruct.Normal, vertex.Texture);
 

@@ -93,7 +93,7 @@ namespace Renderer3D.Models.Scene
             renderTime = Stopwatch.ElapsedMilliseconds;
             long prevMs = Stopwatch.ElapsedMilliseconds;
 
-            Projection.ProjectMesh(matrixes, _mesh, SceneProperties.RenderProperties.RenderMode);
+            Projection.ProjectMesh(matrixes, _mesh, SceneProperties.RenderProperties.ShadingMode);
 
             Debug.WriteLine($"Vertex calculation time: {Stopwatch.ElapsedMilliseconds - prevMs}");
             prevMs = Stopwatch.ElapsedMilliseconds;

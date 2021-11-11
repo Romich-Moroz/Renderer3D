@@ -22,6 +22,7 @@ namespace Renderer3D.Models.Data.Properties
 
     public class MaterialProperties
     {
+        public static readonly Vector3 DefaultAmbientColor = new Vector3(0x10,0x10,0x10);
         public static readonly Vector3 DefaultSpecularColor = new Vector3(0xFF, 0xCF, 0x42);
         public static readonly Vector3 DefaultDiffuseColor = new Vector3(0xD4, 0XAF, 0x37);
         /// <summary>

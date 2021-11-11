@@ -17,6 +17,7 @@ namespace Renderer3D.Models.Processing
     {
         private ConcurrentBitmap _concurrentBitmap;
         private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        
 
         public WriteableBitmap Bitmap
         {
@@ -68,17 +69,16 @@ namespace Renderer3D.Models.Processing
                 {
                     float w = 1.0f / iLine.Coordinates.W;
                     VertexValue interpPixel = iLine * w;
-                    //interpPixel.Coordinates = new Vector4 { X = x, Y = y, Z = w, W = interpPixel.Coordinates.Z };
 
                     RenderStruct ps = GetRenderStruct(materialProperties, interpPixel.Texture, interpPixel.Normal);
 
-                    switch (sceneProperties.RenderProperties.RenderMode)
+                    switch (sceneProperties.RenderProperties.ShadingMode)
                     {
                         case ShadingMode.Flat:
-                            _concurrentBitmap.DrawPixel(x, y, w, FlatShader.GetFaceColor(ps.DiffuseColor, ndotl));
+                            _concurrentBitmap.DrawPixel(x, y, interpPixel.Coordinates.Z, FlatShader.GetFaceColor(ps.DiffuseColor, ndotl));
                             break;
                         case ShadingMode.Phong:
-                            _concurrentBitmap.DrawPixel(x, y, w, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel, ps));
+                            _concurrentBitmap.DrawPixel(x, y, interpPixel.Coordinates.Z, PhongShader.GetPixelColor(materialProperties, sceneProperties.LightingProperties, sceneProperties.CameraProperties, interpPixel, ps));
                             break;
                         default:
                             throw new NotImplementedException("Specified render mode is not implemented");
@@ -123,7 +123,7 @@ namespace Renderer3D.Models.Processing
             Calculation.SortTriangleVerticesByY(ref t);
 
             float ndotl = default;
-            if (sceneProperties.RenderProperties.RenderMode == ShadingMode.Flat)
+            if (sceneProperties.RenderProperties.ShadingMode == ShadingMode.Flat)
             {
                 ndotl = FlatShader.GetNdotL(t, sceneProperties.LightingProperties);
             }
@@ -164,7 +164,7 @@ namespace Renderer3D.Models.Processing
 
         public void RenderPolygon(PolygonValue polygon, SceneProperties sceneProperties, MaterialProperties materialProperties)
         {
-            switch (sceneProperties.RenderProperties.RenderMode)
+            switch (sceneProperties.RenderProperties.ShadingMode)
             {
                 case ShadingMode.None:
                     for (int i = 0; i < polygon.TriangleValues.Length; i++)
