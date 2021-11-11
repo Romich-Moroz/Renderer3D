@@ -17,7 +17,7 @@ namespace Renderer3D.Models.Processing
     {
         private ConcurrentBitmap _concurrentBitmap;
         private readonly ParallelOptions _options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-        
+
 
         public WriteableBitmap Bitmap
         {
