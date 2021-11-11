@@ -1,6 +1,7 @@
 ﻿using Renderer3D.Models.Data;
 using Renderer3D.Models.Data.Properties;
 using Renderer3D.Models.Extensions;
+using Renderer3D.Models.Processing.Shaders;
 using System;
 using System.Numerics;
 using System.Windows.Media;
@@ -86,9 +87,9 @@ namespace Renderer3D.Models.Processing
             return (dP1P2, dP1P3);
         }
 
-        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, Vector3 normal, Vector3 color)
+        public static Vector3 GetDiffuseLightingColor(MaterialProperties materialProperties, Vector3 light, RenderStruct renderStruct)
         {
-            return color * ComputeNDotL(light, normal) * materialProperties.DiffuseColorIntensity;
+            return renderStruct.DiffuseColor * ComputeNDotL(light, renderStruct.Normal) * materialProperties.DiffuseColorIntensity;
         }
 
         public static float Pow(float value, int pow)

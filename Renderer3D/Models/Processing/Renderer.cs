@@ -68,6 +68,7 @@ namespace Renderer3D.Models.Processing
                 {
                     float w = 1.0f / iLine.Coordinates.W;
                     VertexValue interpPixel = iLine * w;
+                    //interpPixel.Coordinates = new Vector4 { X = x, Y = y, Z = w, W = interpPixel.Coordinates.Z };
 
                     RenderStruct ps = GetRenderStruct(materialProperties, interpPixel.Texture, interpPixel.Normal);
 

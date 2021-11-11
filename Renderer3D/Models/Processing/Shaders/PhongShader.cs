@@ -1,5 +1,4 @@
 ﻿using Renderer3D.Models.Data;
-using Renderer3D.Models.Data.Concurrency;
 using Renderer3D.Models.Data.Properties;
 using Renderer3D.Models.Extensions;
 using System;
@@ -16,7 +15,7 @@ namespace Renderer3D.Models.Processing.Shaders
             Vector3 hVector = Vector3.Normalize(viewVector + lightVector);
 
             Vector3 ambient = materialProperties.AmbientColorIntensity;
-            Vector3 diffuse = Calculation.GetDiffuseLightingColor(materialProperties, lightVector, renderStruct.Normal, renderStruct.DiffuseColor);
+            Vector3 diffuse = Calculation.GetDiffuseLightingColor(materialProperties, lightVector, renderStruct);
             Vector3 reflection = Calculation.GetSpecularColor(materialProperties, hVector, renderStruct.Normal, vertex.Texture);
 
             Vector3 intensity = ambient + diffuse + reflection;
