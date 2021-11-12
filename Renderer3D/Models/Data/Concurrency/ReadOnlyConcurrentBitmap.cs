@@ -30,11 +30,14 @@ namespace Renderer3D.Models.Data.Concurrency
 
         public Vector3 GetColor(float u, float v)
         {
-            int x = (int)(u * Width);
+            u = u > 0 ? u % 1f : u - (float)Math.Floor(u);
+            v = v > 0 ? v % 1f : v - (float)Math.Floor(v);
+
+            int x = (int)(u % 1f * Width);
             //Colors in bitmap are stored in reverse order from y so texture[0,0] is actually stored in [0,width-1] inside bitmap
-            int y = (int)((1 - v) * Height);
+            int y = (int)((1 - v) % 1f * Height);
             IntPtr pBackBuffer = backBuffer + y * Stride + x * BytesPerPixel;
-            return Marshal.ReadInt32(pBackBuffer).ToVector3();
+            return Marshal.ReadInt32(pBackBuffer).ToVector3() / 255;
         }
     }
 }

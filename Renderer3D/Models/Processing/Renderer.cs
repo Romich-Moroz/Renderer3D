@@ -27,12 +27,12 @@ namespace Renderer3D.Models.Processing
 
         private static RenderStruct GetRenderStruct(MaterialProperties materialProperties, Vector3 texture, Vector3 normal)
         {
-            Vector3 color = materialProperties.TexturesBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultDiffuseColor;
+            Vector3 color = materialProperties.TexturesBitmap?.GetColor(texture.X, texture.Y) ?? materialProperties.DiffuseColorIntensity;
             normal = materialProperties.NormalBitmap?.GetColor(texture.X, texture.Y) ?? Vector3.Normalize(normal);
-            Vector3 specularColor = materialProperties.SpecularBitmap?.GetColor(texture.X, texture.Y) ?? MaterialProperties.DefaultSpecularColor;
+            Vector3 specularColor = materialProperties.SpecularBitmap?.GetColor(texture.X, texture.Y) ?? color * materialProperties.SpecularColorIntensity;
             if (materialProperties.NormalBitmap != null)
             {
-                normal = Vector3.Normalize(normal) * 2 - new Vector3(1, 1, 1);
+                normal = normal * 2 - new Vector3(1, 1, 1);
             }
 
             return new RenderStruct

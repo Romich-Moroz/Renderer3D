@@ -9,7 +9,7 @@ namespace Renderer3D.Models.Processing.Shaders
     {
         public static int GetFaceColor(Vector3 fallbackColor, float ndotl)
         {
-            return (fallbackColor * ndotl).ToInt();
+            return (fallbackColor * ndotl).ToColor().ToInt();
         }
 
         public static float GetNdotL(TriangleValue triangle, LightingProperties lightingProperties)

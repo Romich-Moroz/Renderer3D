@@ -36,6 +36,7 @@ namespace Renderer3D.Viewmodels
             MeshParser.Parse("../../../RenderModels/Eye/eyeball.obj"),
             MeshParser.Parse("../../../RenderModels/Cat/12221_Cat_v1_l3.obj"),
             MeshParser.Parse("../../../RenderModels/AfricanHead/african_head.obj"),
+            //MeshParser.Parse("../../../RenderModels/GreenWood/Source/GreenWood/GreenWood.obj"),
         };
 
         private void UpdateFrame()

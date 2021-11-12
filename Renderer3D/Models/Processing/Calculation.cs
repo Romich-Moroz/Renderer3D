@@ -108,13 +108,11 @@ namespace Renderer3D.Models.Processing
 
             return result;
         }
-        public static Vector3 GetSpecularColor(MaterialProperties materialProperties, Vector3 hVector, Vector3 normal, Vector3 reflectionMapTexture)
+        public static Vector3 GetSpecularColor(MaterialProperties materialProperties, Vector3 hVector, RenderStruct renderStruct)
         {
-            float dot = Math.Abs(Vector3.Dot(normal, hVector));
+            float dot = Math.Abs(Vector3.Dot(renderStruct.Normal, hVector));
             float pow = Pow(dot, (int)materialProperties.SpecularHighlight);
-
-            Vector3 Is = materialProperties.SpecularBitmap?.GetColor(reflectionMapTexture.X, reflectionMapTexture.Y) ?? MaterialProperties.DefaultSpecularColor;
-            return Is * pow * materialProperties.SpecularColorIntensity;
+            return renderStruct.SpecularColor * pow * materialProperties.SpecularColorIntensity;
         }
 
     }
