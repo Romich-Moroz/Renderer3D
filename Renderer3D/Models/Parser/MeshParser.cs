@@ -214,7 +214,7 @@ namespace Renderer3D.Models.Parser
                 {
                     case "newmtl":
                         matProperties = new MaterialProperties();
-                        result.Add(stringValues[1], matProperties);
+                        result.Add(string.Join(' ', stringValues.Skip(1)), matProperties);
                         break;
                     case "Ns":
                         matProperties.SpecularHighlight = float.Parse(stringValues[1]);

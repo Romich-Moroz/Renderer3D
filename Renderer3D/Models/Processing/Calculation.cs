@@ -67,23 +67,9 @@ namespace Renderer3D.Models.Processing
         public static (double, double) GetInverseSlopes(Vector3 v0, Vector3 v1, Vector3 v2)
         {
             double dP1P2, dP1P3;
-            if (v1.Y - v0.Y > 0)
-            {
-                dP1P2 = (v1.X - v0.X) / (v1.Y - v0.Y);
-            }
-            else
-            {
-                dP1P2 = 0;
-            }
+            dP1P2 = v1.Y - v0.Y > 0 ? (v1.X - v0.X) / (v1.Y - v0.Y) : 0;
 
-            if (v2.Y - v0.Y > 0)
-            {
-                dP1P3 = (v2.X - v0.X) / (v2.Y - v0.Y);
-            }
-            else
-            {
-                dP1P3 = 0;
-            }
+            dP1P3 = v2.Y - v0.Y > 0 ? (v2.X - v0.X) / (v2.Y - v0.Y) : 0;
             return (dP1P2, dP1P3);
         }
 
@@ -108,6 +94,7 @@ namespace Renderer3D.Models.Processing
 
             return result;
         }
+
         public static Vector3 GetSpecularColor(MaterialProperties materialProperties, Vector3 hVector, RenderStruct renderStruct)
         {
             float dot = Math.Abs(Vector3.Dot(renderStruct.Normal, hVector));
