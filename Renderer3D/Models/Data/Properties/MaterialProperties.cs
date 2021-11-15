@@ -86,8 +86,8 @@ namespace Renderer3D.Models.Data.Properties
         /// </summary>
         public string ColorNormalFileName;
 
-        public ReadOnlyConcurrentBitmap TexturesBitmap;
-        public ReadOnlyConcurrentBitmap SpecularBitmap;
-        public ReadOnlyConcurrentBitmap NormalBitmap;
+        public ColorMap TexturesBitmap;
+        public ColorMap SpecularBitmap;
+        public ColorMap NormalBitmap;
     }
 }

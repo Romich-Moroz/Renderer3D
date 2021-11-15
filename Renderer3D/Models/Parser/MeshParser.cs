@@ -280,13 +280,13 @@ namespace Renderer3D.Models.Parser
             return string.Join(' ', entries.Skip(1));
         }
 
-        private static ReadOnlyConcurrentBitmap LoadBitmap(Dictionary<string, ReadOnlyConcurrentBitmap> dict, string dir, string filename)
+        private static ColorMap LoadBitmap(Dictionary<string, ColorMap> dict, string dir, string filename)
         {
             string path = Path.Combine(dir, filename);
-            ReadOnlyConcurrentBitmap bmp;
+            ColorMap bmp;
             if (!string.IsNullOrEmpty(filename) && !dict.ContainsKey(filename) && File.Exists(path))
             {
-                bmp = new ReadOnlyConcurrentBitmap(new WriteableBitmap(new BitmapImage(new Uri(path, UriKind.Relative))));
+                bmp = new ColorMap(new WriteableBitmap(new BitmapImage(new Uri(path, UriKind.Relative))));
                 dict.Add(filename, bmp);
                 return bmp;
             }
@@ -311,7 +311,7 @@ namespace Renderer3D.Models.Parser
             string path = Path.Combine(dir, materialsPath);
             Dictionary<string, MaterialProperties> materialProperties = ParseMaterialsFile(path);
 
-            Dictionary<string, ReadOnlyConcurrentBitmap> loadedTextures = new Dictionary<string, ReadOnlyConcurrentBitmap>();
+            Dictionary<string, ColorMap> loadedTextures = new Dictionary<string, ColorMap>();
             foreach (Model model in models)
             {
                 MaterialProperties matProps = materialProperties[model.MaterialKey];

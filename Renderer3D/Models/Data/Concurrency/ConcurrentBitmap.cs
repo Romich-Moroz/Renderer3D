@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace Renderer3D.Models.Data.Concurrency
 {
-    public class ConcurrentBitmap : ReadOnlyConcurrentBitmap
+    public class ConcurrentBitmap
     {
         private readonly byte[] _blankBuffer;
         private readonly float[] _depthBuffer;
@@ -14,6 +14,16 @@ namespace Renderer3D.Models.Data.Concurrency
 
         [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory")]
         private static extern void CopyMemory(IntPtr destination, IntPtr source, uint length);
+
+        protected readonly WriteableBitmap _bitmap;
+        protected readonly IntPtr backBuffer;
+
+        public int Stride { get; }
+        public int Width { get; }
+        public int Height { get; }
+        public int BytesPerPixel { get; }
+
+        public WriteableBitmap WriteableBitmap => _bitmap;
 
         private DrawResult DrawPixel(int x, int y, int color, bool useDepthBuffer = false, float z = 0)
         {
@@ -43,8 +53,15 @@ namespace Renderer3D.Models.Data.Concurrency
             return DrawResult.OutOfBounds;
         }
 
-        public ConcurrentBitmap(WriteableBitmap bitmap) : base(bitmap)
+        public ConcurrentBitmap(WriteableBitmap bitmap)
         {
+            _bitmap = bitmap;
+            Width = bitmap.PixelWidth;
+            Height = bitmap.PixelHeight;
+            backBuffer = bitmap.BackBuffer;
+            Stride = bitmap.BackBufferStride;
+            BytesPerPixel = bitmap.Format.BitsPerPixel / 8;
+
             int bitmapLength = bitmap.PixelWidth * bitmap.PixelHeight * 4;
             _blankBuffer = new byte[bitmapLength];
             unsafe
