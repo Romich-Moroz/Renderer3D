@@ -52,7 +52,6 @@ namespace Renderer3D.Models.Processing
 
         public static void ProjectMesh(TransformMatrixes transformMatrixes, Mesh mesh, ShadingMode renderMode)
         {
-            //Project to screen
             _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Vertices.Count), ParallelOptions, Range =>
             {
                 for (int i = Range.Item1; i < Range.Item2; i++)
@@ -74,7 +73,6 @@ namespace Renderer3D.Models.Processing
 
             if (mesh.OriginalMeshProperties.Normals.Count > 0)
             {
-                //Project normals
                 _ = Parallel.ForEach(Partitioner.Create(0, mesh.OriginalMeshProperties.Normals.Count), ParallelOptions, Range =>
                 {
                     for (int i = Range.Item1; i < Range.Item2; i++)

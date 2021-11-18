@@ -43,7 +43,7 @@ namespace Renderer3D.Models.Processing
             };
         }
 
-        private void DrawFlatTriangle(VertexValue v0, VertexValue v1, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
+        private void DrawFlatTriangle(VertexValue v0, VertexValue v2, VertexValue dv0, VertexValue dv1, VertexValue itEdge1, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
         {
             VertexValue itEdge0 = v0;
 
@@ -70,6 +70,16 @@ namespace Renderer3D.Models.Processing
                     float w = 1.0f / iLine.Coordinates.W;
                     VertexValue interpPixel = iLine * w;
 
+                    //var coords = new Vector4
+                    //{
+                    //    X = x,
+                    //    Y = y,
+                    //    Z = interpPixel.Coordinates.Z,
+                    //    W = 1
+                    //};
+
+                    //interpPixel.Coordinates = coords;
+
                     RenderStruct ps = GetRenderStruct(materialProperties, interpPixel.Texture, interpPixel.Normal);
 
                     switch (sceneProperties.RenderProperties.ShadingMode)
@@ -93,7 +103,7 @@ namespace Renderer3D.Models.Processing
             VertexValue dv0 = (v2 - v0) / deltaY;
             VertexValue dv1 = (v2 - v1) / deltaY;
 
-            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v1, sceneProperties, materialProperties, ndotl);
+            DrawFlatTriangle(v0, v2, dv0, dv1, v1, sceneProperties, materialProperties, ndotl);
         }
 
         private void DrawFlatBottomTriangle(VertexValue v0, VertexValue v1, VertexValue v2, SceneProperties sceneProperties, MaterialProperties materialProperties, float ndotl)
@@ -102,7 +112,7 @@ namespace Renderer3D.Models.Processing
             VertexValue dv0 = (v1 - v0) / deltaY;
             VertexValue dv1 = (v2 - v0) / deltaY;
 
-            DrawFlatTriangle(v0, v1, v2, dv0, dv1, v0, sceneProperties, materialProperties, ndotl);
+            DrawFlatTriangle(v0, v2, dv0, dv1, v0, sceneProperties, materialProperties, ndotl);
         }
 
         private void CorrectTransform(ref VertexValue v)

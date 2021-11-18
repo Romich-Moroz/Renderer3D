@@ -17,6 +17,7 @@ namespace Renderer3D.Models.Data.Concurrency
             u = u > 0 ? u % 1f : u - (float)Math.Floor(u);
             v = v > 0 ? v % 1f : v - (float)Math.Floor(v);
 
+            // crash on u = 1 or v = 1, fix later (lol);
             int x = (int)(u * Width);
             int y = (int)(v * Height);
 
